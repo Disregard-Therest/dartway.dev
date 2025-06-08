@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdartway_dev=self.webpackChunkdartway_dev||[]).push([[903],{1912:a=>{a.exports=JSON.parse('{"blogBasePath":"/dartway.dev/blog","blogTitle":"Blog","authorsListPath":"/dartway.dev/blog/authors"}')}}]);
