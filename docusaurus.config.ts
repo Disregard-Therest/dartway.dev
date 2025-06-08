@@ -5,8 +5,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'My Site',
-  tagline: 'Dinosaurs are cool',
+  title: 'Framework for Flutter app development',
+  tagline: 'Full-stack Dart Framework for building Flutter apps faster',
   favicon: 'favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -14,9 +14,9 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
-  url: 'https://novikov-it.github.io',
-  baseUrl: process.env.BASE_URL || '/dartway.dev/',
-  organizationName: 'novikov-it',
+  url: 'https://disregard-therest.github.io',
+  baseUrl: '/', //process.env.BASE_URL || '/dartway.dev/',
+  organizationName: 'Disregard-Therest',
   projectName: 'dartway.dev',
 
   // // Set the production url of your site here
@@ -33,6 +33,9 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
+  // Added by me
+  trailingSlash: false, // requested by GitHub Pages for better behaviour with addresses
+
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
@@ -45,28 +48,28 @@ const config: Config = {
     [
       'classic',
       {
-        docs: {
-          sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-        },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        // docs: {
+        //   sidebarPath: './sidebars.ts',
+        //   // Please change this to your repo.
+        //   // Remove this to remove the "edit this page" links.
+        //   editUrl:
+        //     'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+        // },
+        // blog: {
+        //   showReadingTime: true,
+        //   feedOptions: {
+        //     type: ['rss', 'atom'],
+        //     xslt: true,
+        //   },
+        //   // Please change this to your repo.
+        //   // Remove this to remove the "edit this page" links.
+        //   editUrl:
+        //     'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+        //   // Useful options to enforce blogging best practices
+        //   onInlineTags: 'warn',
+        //   onInlineAuthors: 'warn',
+        //   onUntruncatedBlogPosts: 'warn',
+        // },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -75,6 +78,11 @@ const config: Config = {
   ],
 
   themeConfig: {
+    colorMode: {
+      defaultMode: 'dark',
+      disableSwitch: false, // или true, если не хочешь показывать переключатель
+      respectPrefersColorScheme: false, // игнорировать системные настройки
+    },
     // Replace with your project's social card
     image: 'img/dartway-preview.png',
     metadata: [
@@ -123,13 +131,13 @@ const config: Config = {
             { label: 'GitHub', href: 'https://github.com/nit-studio/dartway.dev' },
           ],
         },
-        {
-          title: 'More',
-          items: [
-            // { label: 'Blog', to: '/blog' },
-            { label: 'License: Apache 2.0', to: '/license' },
-          ],
-        },
+        // {
+        //   title: 'More',
+        //   items: [
+        //     // { label: 'Blog', to: '/blog' },
+        //     { label: 'License: Apache 2.0', to: '/license' },
+        //   ],
+        // },
       ],
       copyright:
         `Copyright © ${new Date().getFullYear()} Dart Way. Built with Docusaurus.`,

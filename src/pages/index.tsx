@@ -17,7 +17,7 @@ export default function Home(): JSX.Element {
             <Link className="button button--primary button--lg" to="/docs/intro">
               Get Started
             </Link>
-            <Link className="button button--secondary button--lg" to="https://github.com/nit-studio/dartway.dev">
+            <Link className="button button--secondary button--lg" to="https://github.com/novikov-it/dartway">
               GitHub
             </Link>
           </div>
