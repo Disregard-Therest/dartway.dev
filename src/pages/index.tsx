@@ -17,7 +17,7 @@ export default function Home(): JSX.Element {
             <Link className="button button--primary button--lg" to="/docs/intro">
               Get Started
             </Link>
-            <Link className="button button--secondary button--lg" to="https://github.com/novikov-it/dartway">
+            <Link className="button button--secondary button--lg" to="https://github.com/dartway/dartway">
               GitHub
             </Link>
           </div>
@@ -152,8 +152,11 @@ export default function Home(): JSX.Element {
             <Link className="button button--primary button--lg" to="/docs/intro">
               Start Now
             </Link>
+            <Link className="button button--secondary button--lg" to="https://t.me/dartwaydev_ru">
+              Telegram (RU)
+            </Link>
             <Link className="button button--secondary button--lg" to="https://t.me/dartwaydev">
-              Telegram Chat
+              Telegram (ENG)
             </Link>
           </div>
         </section>

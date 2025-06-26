@@ -103,13 +103,18 @@ const config: Config = {
         // },
         // { to: '/blog', label: 'Blog', position: 'left' },
         {
-          href: 'https://github.com/novikov-it/dartway',
+          href: 'https://github.com/dartway/dartway',
           label: 'GitHub',
           position: 'right',
         },
         {
+          href: 'https://t.me/dartwaydev_ru',
+          label: 'Telegram (RU)',
+          position: 'right',
+        },
+        {
           href: 'https://t.me/dartwaydev',
-          label: 'Telegram',
+          label: 'Telegram (ENG)',
           position: 'right',
         },
       ],
@@ -127,8 +132,9 @@ const config: Config = {
         {
           title: 'Community',
           items: [
-            { label: 'Telegram', href: 'https://t.me/dartwaydev' },
-            { label: 'GitHub', href: 'https://github.com/nit-studio/dartway.dev' },
+            { label: 'Telegram (RU)', href: 'https://t.me/dartwaydev_ru' },
+            { label: 'Telegram (ENG)', href: 'https://t.me/dartwaydev' },
+            { label: 'GitHub', href: 'https://github.com/dartway/dartway' },
           ],
         },
         // {
@@ -145,6 +151,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['dart'],
     },
   } satisfies Preset.ThemeConfig,
 };
