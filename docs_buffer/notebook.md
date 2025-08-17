@@ -1,10 +1,4 @@
-# Quickstart
-
-## 🚀 Setting up your first Dart Way App
-
-Our main goal is to handle all technical issues so that you only need to worry about the real logic and UI.
-Simplest version looks like this.
-
+### App initialization and bindings
 ```dart
   DwApp(
     title: 'Your Dart Way App',
