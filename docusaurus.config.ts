@@ -108,13 +108,8 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://t.me/dartwaydev_ru',
-          label: 'Telegram (RU)',
-          position: 'right',
-        },
-        {
-          href: 'https://t.me/dartwaydev',
-          label: 'Telegram (ENG)',
+          href: 'https://t.me/dartway_dev',
+          label: 'Telegram',
           position: 'right',
         },
       ],
@@ -132,8 +127,7 @@ const config: Config = {
         {
           title: 'Community',
           items: [
-            { label: 'Telegram (RU)', href: 'https://t.me/dartwaydev_ru' },
-            { label: 'Telegram (ENG)', href: 'https://t.me/dartwaydev' },
+            { label: 'Telegram (ENG)', href: 'https://t.me/dartway_dev' },
             { label: 'GitHub', href: 'https://github.com/dartway/dartway' },
           ],
         },

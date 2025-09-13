@@ -5,13 +5,13 @@ import styles from './index.module.css';
 
 export default function Home(): JSX.Element {
   return (
-    <Layout title="Dart Way" description="Fullstack Dart Framework: Flutter + Serverpod">
+    <Layout title="DartWay" description="Full-stack Dart framework: Flutter + Serverpod">
       <main className={styles.main}>
         {/* Hero Section */}
         <section className={styles.hero}>
-          <h1 className={styles.heroTitle}>Build apps faster with ease</h1>
+          <h1 className={styles.heroTitle}>Build reliable Flutter apps in days, not months</h1>
           <p className={styles.heroSubtitle}>
-            Full-Stack Dart Framework for startups, freelancers and studios.
+            Full-stack Dart framework — AI-ready by design.
           </p>
           <div className={styles.heroButtons}>
             <Link className="button button--primary button--lg" to="/docs/intro">
@@ -25,62 +25,49 @@ export default function Home(): JSX.Element {
 
         {/* Pain Points */}
         <section className={styles.section}>
-          <h2>What is painful to build fast in Flutter?</h2>
+          <h2>Why Flutter development is painful?</h2>
           <ul>
-            <li>❌ 50%+ of code is boilerplate: domain, data, api, etc.</li>
-            <li>❌ Logic gets very complicated over time</li>
-            <li>❌ Every developer uses his own rules and style</li>
+            <li>❌ 50%+ of code is boilerplate (models, API, sync)</li>
+            <li>❌ Every dev or AI assistant writes it differently</li>
+            <li>❌ Chaos grows, quality drops</li>
           </ul>
         </section>
 
-        {/* Principles */}
+        {/* Principles / Introducing */}
         <section className={styles.featuresSection}>
-          <h2>Introducing Dart Way</h2>
-          <p>Dart Way isn't just a set of tools — it's a philosophy for building scalable apps fast and clean.</p>
+          <h2>Introducing DartWay</h2>
+          <p>
+            DartWay is an opinionated framework that gives AI and developers strict rules and patterns.
+            Result: code that’s fast to write, clean to read, and safe to scale.
+          </p>
           <div className={styles.featuresGrid}>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🧱</span>
               <h3>Strict logic/UI separation</h3>
-              <p>
-                Clear architectural boundaries make your codebase predictable and scalable — even juniors won't break it.
-              </p>
+              <p>Predictable architecture that scales — juniors and AI can’t mess things up.</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🔁</span>
               <h3>Universal data layer</h3>
-              <p>
-                A single source of truth for your backend, API, serialization, and UI. No boilerplate, no desync — just clean flow.
-              </p>
+              <p>Backend, API, serialization, and UI stay in sync. No boilerplate, no desync.</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🛠️</span>
-              <h3>Practical developer toolkit</h3>
-              <p>
-                Built-in patterns and ready-made solutions for real-world tasks: auth, roles, filtering, pagination, real-time updates.
-              </p>
+              <h3>Practical toolkit</h3>
+              <p>Built-in patterns: auth, roles, filters, pagination, real-time updates.</p>
             </div>
           </div>
         </section>
 
         {/* How it works */}
         <section className={styles.section}>
-          <h2>How Dart Way works</h2>
-          <p>
-            Dart Way transforms your workflow from chaos to clarity in just four steps — keeping your focus on what matters most.
-          </p>
+          <h2>How DartWay works</h2>
+          <p>From chaos to clarity in just four steps.</p>
           <ol className={styles.stepsList}>
-            <li>
-              <strong>📦 Scaffold:</strong> Generate a fullstack Flutter + Serverpod app in seconds.
-            </li>
-            <li>
-              <strong>🧱 Define:</strong> Describe your models and logic once — codegen syncs backend and frontend.
-            </li>
-            <li>
-              <strong>🛠 Build:</strong> Use a clean UI kit, reactive views, and shared logic to deliver fast.
-            </li>
-            <li>
-              <strong>🚀 Launch:</strong> Deploy with backend, auth, and real-time updates — all in Dart.
-            </li>
+            <li><strong>📦 Scaffold:</strong> Generate a full-stack Flutter + Serverpod app in seconds.</li>
+            <li><strong>🧱 Define:</strong> Describe models once — AI and codegen keep backend & frontend in sync.</li>
+            <li><strong>🛠 Build:</strong> Use clean UI kit, reactive views, and shared logic to deliver fast.</li>
+            <li><strong>🚀 Launch:</strong> Deploy with backend, auth, and real-time — all in Dart.</li>
           </ol>
         </section>
 
@@ -90,73 +77,69 @@ export default function Home(): JSX.Element {
           <div className={styles.featuresGrid}>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>⚡</span>
-              <h3>Fast Setup</h3>
-              <p>CLI + templates get you running in minutes</p>
+              <h3>Instant setup</h3>
+              <p>CLI + templates in minutes</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🧼</span>
-              <h3>Clean Code</h3>
-              <p>Minimal boilerplate and consistent structure</p>
+              <h3>Clean by default</h3>
+              <p>Less boilerplate, strict structure</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>📦</span>
-              <h3>Built-in UI & Data</h3>
-              <p>UI Kit + typed data-layer out of the box</p>
+              <h3>UI & Data out of the box</h3>
+              <p>UI Kit + typed data-layer</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🔒</span>
-              <h3>Auth & Permissions</h3>
-              <p>Secure by design with role-based access control</p>
+              <h3>Secure</h3>
+              <p>Auth & role-based permissions</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🌍</span>
               <h3>Cross-platform</h3>
-              <p>Mobile, Web and Telegram WebApp ready</p>
+              <p>Mobile, Web, Telegram WebApp</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🧠</span>
               <h3>Real-time & CRUD</h3>
-              <p>Live updates, filtering, sorting, pagination</p>
+              <p>Live data, filters, triggers, pagination</p>
             </div>
           </div>
         </section>
 
         {/* Who it's for */}
         <section className={styles.featuresSection}>
-          <h2>Who Dart Way is for</h2>
-          <p>Dart Way is made for teams and solo devs who want to build apps faster, cleaner, and without tech debt.</p>
+          <h2>Who is DartWay for?</h2>
           <div className={styles.featuresGrid}>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>👨‍💻</span>
               <h3>Freelancers</h3>
-              <p>Speed up delivery and focus on features — not infrastructure and boilerplate.</p>
+              <p>Deliver faster, skip boilerplate.</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🏢</span>
               <h3>Studios</h3>
-              <p>Keep your codebase clean across teams. Let juniors code safely and seniors focus on architecture.</p>
+              <p>Keep teams aligned, juniors safe, seniors free.</p>
             </div>
             <div className={styles.featureCard}>
               <span className={styles.emoji}>🚀</span>
-              <h3>Startup founders</h3>
-              <p>Launch MVPs quickly with built-in backend, auth, UI, and real-time features — no extra team required.</p>
+              <h3>Founders</h3>
+              <p>MVPs in days with backend, auth & real-time built-in.</p>
             </div>
           </div>
         </section>
 
         {/* CTA */}
         <section className={styles.section}>
-          <h2>Join the Dart Way</h2>
-          <p>Follow our journey and join the growing community of builders.</p>
+          <h2>Ready for the new way of building Flutter apps?</h2>
+          <p>Join the community. Build with us.</p>
           <div className={styles.heroButtons}>
             <Link className="button button--primary button--lg" to="/docs/intro">
               Start Now
             </Link>
-            <Link className="button button--secondary button--lg" to="https://t.me/dartwaydev_ru">
-              Telegram (RU)
-            </Link>
-            <Link className="button button--secondary button--lg" to="https://t.me/dartwaydev">
-              Telegram (ENG)
+            <Link className="button button--secondary button--lg" to="https://t.me/dartway_dev">
+              Telegram Community
             </Link>
           </div>
         </section>

@@ -7,7 +7,7 @@ Ship real products faster, cleaner, and with minimal boilerplate.
 * 🧱 Feature-first modules, predictable delivery
 * 🔒 CRUD pipeline with access rules, validation, triggers
 * 🔌 Realtime (WebSocket) + built-in loading skeletons & error UX
-* 💬 Community: [RU](https://t.me/dartwaydev_ru) • [EN](https://t.me/dartwaydev)
+* 💬 Community: https://t.me/dartway_dev
 
 ---
 
