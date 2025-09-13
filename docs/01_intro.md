@@ -156,6 +156,6 @@ Now `Post` exists both in Flutter and server code, ready for `DwRepository`.
 * **Predictable delivery.** CRUD pipeline makes rules explicit and testable.
 * **Full-stack Dart.** One language across UI, backend, and models.
 
-👉 Next: **[Quick Start →](/docs/Quickstart/project-creation)** to set up a project and see it working.
+👉 Next: **[Quick Start →](/docs/Quickstart/quick-start)** to set up a project and see it working.
 
 ---
