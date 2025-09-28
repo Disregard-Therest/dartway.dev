@@ -1,42 +1,29 @@
+import 'dart:convert';
 import 'dart:io';
 
 Future<void> main() async {
-  print('🔄 Updating DartWay Guidelines for Docusaurus...');
+  print('🔄 Updating DartWay Guidelines for Docusaurus (no subtree)...');
 
   await _ensureRemote();
 
-  // 1. Подтянуть свежую версию через git subtree
-  final pull = await Process.run('git', [
-    'subtree',
-    'pull',
-    '--prefix=dartway/guidelines',
+  // 1. Подтянуть свежие изменения из remote
+  final fetch = await Process.run('git', [
+    'fetch',
     'dartway_guidelines',
     'main',
-    '--squash',
   ]);
-
-  if (pull.exitCode != 0) {
-    stderr.writeln('❌ Git subtree pull failed:\n${pull.stderr}');
-    stderr.writeln(
-      '💡 Hint: Commit or stash your changes before running update.',
-    );
+  if (fetch.exitCode != 0) {
+    stderr.writeln('❌ Git fetch failed:\n${fetch.stderr}');
     exit(1);
   }
-  print('✅ Guidelines updated from remote.');
+  print('✅ Guidelines fetched from remote.');
 
-  // 2. Foundations → docs/3. foundations
-  _copyDocs(
-    'dartway/guidelines/dev-guidelines/foundations',
-    'docs/3. foundations',
-  );
+  // 2. Скопировать категории
+  _copyDocsFromGit('dev-guidelines/foundations', 'docs/3. foundations');
+  _copyDocsFromGit('dev-guidelines/flutter', 'docs/4. flutter');
+  _copyDocsFromGit('dev-guidelines/server', 'docs/5. server');
 
-  // 3. Flutter → docs/4. flutter
-  _copyDocs('dartway/guidelines/dev-guidelines/flutter', 'docs/4. flutter');
-
-  // 4. Server → docs/5. server
-  _copyDocs('dartway/guidelines/dev-guidelines/server', 'docs/5. server');
-
-  print('✨ Guidelines copied into Docusaurus docs!');
+  print('✨ Guidelines synced into Docusaurus docs!');
 }
 
 Future<void> _ensureRemote() async {
@@ -69,33 +56,56 @@ Future<void> _ensureRemote() async {
   }
 }
 
-void _copyDocs(String source, String destination) {
-  final srcDir = Directory(source);
-  if (!srcDir.existsSync()) {
-    print('⚠️ Source not found: $source');
-    return;
+void _copyDocsFromGit(String sourcePath, String destinationPath) {
+  final destDir = Directory(destinationPath);
+  if (!destDir.existsSync()) {
+    destDir.createSync(recursive: true);
   }
 
-  final destDir = Directory(destination);
-  if (destDir.existsSync()) {
-    destDir.deleteSync(recursive: true);
-  }
-  destDir.createSync(recursive: true);
-
-  for (final entity in srcDir.listSync(recursive: true)) {
+  // удаляем старые .md (оставляем _category_.json)
+  for (final entity in destDir.listSync(recursive: true)) {
     if (entity is File && entity.path.endsWith('.md')) {
-      final relativePath = entity.path
-          .replaceFirst(srcDir.path, '')
-          .replaceAll('\\', '/');
-
-      final destFile = File('${destDir.path}$relativePath');
-
-      destFile.parent.createSync(recursive: true);
-      entity.copySync(destFile.path);
-
-      print('📄 ${entity.path} → ${destFile.path}');
+      entity.deleteSync();
     }
   }
 
-  print('📂 Copied docs: $source → $destination');
+  // достаём список файлов в директории из FETCH_HEAD
+  final lsTree = Process.runSync('git', [
+    'ls-tree',
+    '-r',
+    '--name-only',
+    'dartway_guidelines/main',
+    sourcePath,
+  ]);
+
+  if (lsTree.exitCode != 0) {
+    stderr.writeln('⚠️ Failed to list files for $sourcePath: ${lsTree.stderr}');
+    return;
+  }
+
+  final files = (lsTree.stdout as String)
+      .split('\n')
+      .where((f) => f.endsWith('.md'));
+
+  for (final file in files) {
+    if (file.isEmpty) continue;
+
+    final content = Process.runSync('git', [
+      'show',
+      'dartway_guidelines/main:$file',
+    ], stdoutEncoding: utf8);
+
+    if (content.exitCode != 0) {
+      stderr.writeln('⚠️ Failed to read file $file: ${content.stderr}');
+      continue;
+    }
+
+    final relativePath = file.replaceFirst(sourcePath, '');
+    final destFile = File('$destinationPath$relativePath');
+
+    destFile.parent.createSync(recursive: true);
+    destFile.writeAsStringSync(content.stdout as String, encoding: utf8);
+
+    print('📄 $file → ${destFile.path}');
+  }
 }
