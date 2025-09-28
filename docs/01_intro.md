@@ -18,15 +18,9 @@ Ship real products faster, cleaner, and with minimal boilerplate.
 Typed, paginated data straight in widgets. Skeletons & errors handled automatically.
 
 ```dart
-final posts = ref.watchEntityListAsync<Post>(
-  backendFilter: DwBackendFilter.and([
-    PostFilter.authorId.equals(currentUserId),
-    PostFilter.publishedAt.greaterThan(DateTime(2025, 1, 1)),
-  ]),
-  sortBy: [PostSort.publishedAt.desc()],
-);
+final posts = ref.watchEntityListAsync<Post>();
 
-return posts.dwWhenList(
+return posts.dwBuildListAsync(
   loadingItemsCount: 6,
   childBuilder: (items) => ListView.builder(
     itemCount: items.length,
@@ -88,7 +82,8 @@ Access rules → validation → preprocessing → side-effects.
 All executed in the right order and properly logged.
 
 ```dart
-final postInsert = InsertConfig<Post>(
+final postInsertConfig = InsertConfig<Post>(
+  table: Post.t,
   allowInsert: (session, post) async =>
       session.authenticated && session.userId == post.authorId,
   insertValidation: (session, post) {
@@ -101,60 +96,15 @@ final postInsert = InsertConfig<Post>(
     await Realtime.push('posts:new', post);
   },
 );
-
-Future<Post> createPost(Session session, Post input) =>
-    insertWithConfig(session, input, postInsert);
 ```
 
----
-
-### 5) Define once, get full stack
-
-Model in Serverpod → typed code on client + server.
-
-```yaml
-# server: lib/src/protocol/post.yaml
-class: Post
-table: post
-fields:
-  authorId: int
-  title: String
-  body: String?
-  slug: String?
-  publishedAt: DateTime?
-```
-
-Then:
-
-```bash
-serverpod generate
-```
-
-Then init it Flutter:
-```dart
-# flutter: lib/core/default_models.dart
-    DwRepository.setupRepository(
-      // Used for Skeletons
-      defaultModel: Post(
-        id: DwRepository.mockModelId,
-        userId: DwRepository.mockModelId,
-        title: 'My Default Post',
-        body: 'Very interesting text on Flutter development',
-        slug: 'my-default-post',
-        publishedAt: DateTime(2025, 6, 1),
-      ),
-    );
-```
-
-Now `Post` exists both in Flutter and server code, ready for `DwRepository`.
-
----
 
 ## Why teams pick Dart Way
 
 * **Less code, fewer layers.** No hand-rolled repos or state glue.
 * **Predictable delivery.** CRUD pipeline makes rules explicit and testable.
 * **Full-stack Dart.** One language across UI, backend, and models.
+* **Deep AI support** Strict rules for AI code generation
 
 👉 Next: **[Quick Start →](/docs/quick-start)** to set up a project and see it working.
 
