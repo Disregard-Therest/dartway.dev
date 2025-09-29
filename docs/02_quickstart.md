@@ -62,4 +62,11 @@ dart run bin/main.dart --apply-migrations
 
 ![First launch Server logs](/img/server_first_launch_logs.png)
 
-## To be continued soon...
+## That's all!!!
+You have server running and can launch the flutter app connected to it
+
+The app includes
+- phone auth
+- basic scaffold
+- simple profile editing
+- post feed
