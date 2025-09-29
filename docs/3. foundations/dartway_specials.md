@@ -3,7 +3,7 @@ description: Crucial things for project architecture
 alwaysApply: true
 ---
 
-# Crucial Things
+# DartWay Specials
 
 ## UserProfile and UserInfo Logic
 
