@@ -13,32 +13,32 @@ Spin up your first **Dart Way project** in minutes.
 ## 1. Clone the project template
 
 ```bash
-git clone https://github.com/dartway/dartway_project_template myapp
-cd myapp
-```
-
-## 2. Rename the project
-
-Dart Way template comes with a rename.dart script.
-It replaces all project_name_* identifiers with your project name.
-
-```bash
-dart run scripts/rename.dart myapp
+git clone https://github.com/dartway/dartway_project_template.git my_new_project
+cd my_new_project
 ```
 
 :::warning
-Script breaks with file locks sometime. Just launch it once again. And again if needed. Until it finishes without any errors.
-:::
-:::warning
-IDE may show many errors - just because dependencies between flutter, client and server packages don't see updated filenames immediately, should be fine after pub get.
+Delete .git folder manually or with **rm -rf .git** command - it's important to have clear git history
 :::
 
-## 3. Install dependencies
+## 2. Prepare the project files
 
 ```bash
-cd myapp_server && dart pub get
-cd ../myapp_client && dart pub get
-cd ../myapp_flutter && flutter pub get
+dart run dartway/scripts/init_project.dart my_new_project
+```
+
+:::warning
+Call this script before opening the folder in your IDE in order to avoid file locks
+:::
+
+## 3. Open project & install dependencies
+
+Open the project folder in IDE of you choice and run pub get in every folder
+
+```bash
+cd my_new_project_server && dart pub get
+cd ../my_new_project_client && dart pub get
+cd ../my_new_project_flutter && flutter pub get
 ```
 
 ## 4. Setup database and launch server
@@ -46,8 +46,20 @@ cd ../myapp_flutter && flutter pub get
 ```bash
 cd ../myapp_server
 dart pub global activate serverpod_cli 2.9.1
+serverpod generate
 serverpod create-migration
-
+docker compose up -d
 ```
+
+## 5. Launch your server
+
+For VS Code we provide ready to go debug configurations for Server & Flutter apps
+
+Or you can launch manually from Terminal
+```bash
+dart run bin/main.dart --apply-migrations
+```
+
+![First launch Server logs](/img/server_first_launch_logs.png)
 
 ## To be continued soon...
