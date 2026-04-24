@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdartway_dev=self.webpackChunkdartway_dev||[]).push([[527],{1240:e=>{e.exports=JSON.parse('{"name":"docusaurus-plugin-content-docs","id":"education"}')}}]);
