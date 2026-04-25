@@ -1,12 +1,12 @@
 ---
 id: project-creation
 # title: Quick Start2
-description: Create your first Dart Way project in minutes
+description: Create your first DartWay project in minutes
 ---
 
 # Project Creation
 
-This guide will take you from an empty folder to a running **Flutter + Serverpod app** with Dart Way.
+This guide will take you from an empty folder to a running **Flutter + Serverpod app** with DartWay.
 
 ---
 
@@ -30,7 +30,7 @@ Also, make sure Docker is running — Serverpod needs PostgreSQL and Redis.
 
 ---
 
-## 2. Add Dart Way dependencies
+## 2. Add DartWay dependencies
 
 ### Client package (`myapp_client/pubspec.yaml`)
 
@@ -108,7 +108,7 @@ Now `UserProfile` exists both on server and in Flutter client.
 
 ---
 
-## 4. Initialize Dart Way in Flutter
+## 4. Initialize DartWay in Flutter
 
 Replace `main.dart` in `myapp_flutter/lib/`:
 
@@ -181,7 +181,7 @@ cd ../myapp_flutter
 flutter run
 ```
 
-You now have a working **full-stack Dart app** with Dart Way.
+You now have a working **full-stack Dart app** with DartWay.
 
 ---
 

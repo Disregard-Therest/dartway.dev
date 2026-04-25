@@ -1,21 +1,21 @@
 ---
 id: code-checker
-title: Dart Way Code Checker
+title: DartWay Code Checker
 description: Run project checks, list of supported rules, and CI/pre-commit integration
 ---
 
-`Dart Way Code Checker` is a static analysis tool for Flutter projects.
-It enforces Dart Way architectural and UI rules: feature isolation, UI Kit usage, file size limits, and more.
+`DartWay Code Checker` is a static analysis tool for Flutter projects.
+It enforces DartWay architectural and UI rules: feature isolation, UI Kit usage, file size limits, and more.
 
 ---
 
 ## Why a Code Checker?
 
 Architecture is not just folder names — it’s discipline.
-Dart Way aims to make **delivery predictable**, which requires that every developer on the team writes code in the same style, with the same rules, and without endless debates.
+DartWay aims to make **delivery predictable**, which requires that every developer on the team writes code in the same style, with the same rules, and without endless debates.
 
 A human reviewer can miss a violation. A linter can’t.
-The **Dart Way Code Checker** is our automated “architecture guardian”:
+The **DartWay Code Checker** is our automated “architecture guardian”:
 
 - It enforces **feature isolation** — no sneaky imports from another feature’s internals.
 - It keeps **UI Kit centralized** — no raw `Color` or `TextStyle` scattered across code.
@@ -194,7 +194,7 @@ Checking for {uiKitPartMissing, forbiddenUiKitImport, ...}
 ```bash
 #!/usr/bin/env bash
 set -e
-echo "🔍 Dart Way check..."
+echo "🔍 DartWay check..."
 dart run tool/dw_check.dart --level error
 ```
 
@@ -203,7 +203,7 @@ dart run tool/dw_check.dart --level error
 `.github/workflows/dw-check.yml`:
 
 ```yaml
-name: Dart Way Check
+name: DartWay Check
 on: [push, pull_request]
 jobs:
   check:
@@ -226,7 +226,7 @@ jobs:
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Dart Way: Check",
+      "label": "DartWay: Check",
       "type": "shell",
       "command": "dart run dartway_code_checker:check_flutter_app",
       "group": "build"
@@ -241,4 +241,4 @@ jobs:
 
 * Decide severity policy: warnings vs errors.
 * Run `--level error` in CI, but allow `--level warning` locally.
-* Keep rules strict: they reflect Dart Way architecture.
+* Keep rules strict: they reflect DartWay architecture.

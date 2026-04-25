@@ -1,6 +1,10 @@
-# Welcome to Dart Way
+---
+id: intro
+---
 
-**Dart Way** — full-stack Dart framework on **Flutter + Serverpod**.
+# Welcome to DartWay
+
+**DartWay** — full-stack Dart framework on **Flutter + Serverpod**.
 Ship real products faster, cleaner, and with minimal boilerplate.
 
 * 🚀 Build 3–5× faster (typed data layer, ready patterns, fewer layers)
@@ -66,7 +70,7 @@ Generic repo handles persistence — no DTO glue or boilerplate.
 ```dart
 await ref.saveModel(
   Post(
-    title: 'Hello, Dart Way',
+    title: 'Hello, DartWay',
     body: 'Minimal code, maximal progress.',
     authorId: currentUserId,
     publishedAt: DateTime.now(),
@@ -99,7 +103,7 @@ final postInsertConfig = InsertConfig<Post>(
 ```
 
 
-## Why teams pick Dart Way
+## Why teams pick DartWay
 
 * **Less code, fewer layers.** No hand-rolled repos or state glue.
 * **Predictable delivery.** CRUD pipeline makes rules explicit and testable.

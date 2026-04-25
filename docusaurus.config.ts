@@ -5,8 +5,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Framework for Flutter app development',
-  tagline: 'Full-stack Dart Framework for building Flutter apps faster',
+  title: 'DartWay Product Studio',
+  tagline: 'Mobile, web, and Telegram apps built on a pre-built engineering foundation',
   favicon: 'favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -14,7 +14,7 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
-  url: 'https://disregard-therest.github.io',
+  url: 'https://dartway.dev',
   baseUrl: '/', //process.env.BASE_URL || '/dartway.dev/',
   organizationName: 'Disregard-Therest',
   projectName: 'dartway.dev',
@@ -41,7 +41,15 @@ const config: Config = {
   // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'ru'],
+    localeConfigs: {
+      en: {
+        label: 'English',
+      },
+      ru: {
+        label: 'Русский',
+      },
+    },
   },
 
   presets: [
@@ -50,10 +58,6 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         // blog: {
         //   showReadingTime: true,
@@ -77,39 +81,53 @@ const config: Config = {
     ],
   ],
 
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'education',
+        path: 'education',
+        routeBasePath: 'education',
+        sidebarPath: './educationSidebars.ts',
+      } satisfies Preset.Options['docs'],
+    ],
+  ],
+
   themeConfig: {
     colorMode: {
       defaultMode: 'dark',
       disableSwitch: false, // или true, если не хочешь показывать переключатель
       respectPrefersColorScheme: false, // игнорировать системные настройки
     },
-    // Replace with your project's social card
-    image: 'img/dartway-preview.png',
+    image: 'img/hero_background.webp',
     metadata: [
-      { property: 'og:image', content: 'https://dartway.dev/img/dartway-preview.png' },
+      { property: 'og:image', content: 'https://dartway.dev/img/hero_background.webp' },
     ],
     navbar: {
-      title: 'Dart Way.dev',
+      title: 'DartWay',
       logo: {
-        alt: 'Dart Way Logo',
+        alt: 'DartWay Logo',
         src: 'img/dartway_logo.svg',
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
-          position: 'left',
-          label: 'Docs',
-        },
-        // { to: '/blog', label: 'Blog', position: 'left' },
-        {
-          href: 'https://github.com/dartway/dartway',
-          label: 'GitHub',
+          to: '/framework',
           position: 'right',
+          label: 'Our Framework',
         },
         {
-          href: 'https://t.me/dartway_dev',
-          label: 'Telegram',
+          to: '/education/competency-map',
+          position: 'right',
+          label: 'Education',
+        },
+        {
+          href: 'https://t.me/eu_novikov',
+          label: 'Discuss a project',
+          position: 'right',
+          className: 'navbarDiscussButton',
+        },
+        {
+          type: 'localeDropdown',
           position: 'right',
         },
       ],
@@ -140,7 +158,7 @@ const config: Config = {
         // },
       ],
       copyright:
-        `Copyright © ${new Date().getFullYear()} Dart Way. Built with Docusaurus.`,
+        `Copyright © ${new Date().getFullYear()} DartWay. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

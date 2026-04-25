@@ -1,12 +1,12 @@
 ---
 id: quick-start
 title: Quick Start
-description: Spin up your first Dart Way project in minutes
+description: Spin up your first DartWay project in minutes
 ---
 
 # Quick Start
 
-Spin up your first **Dart Way project** in minutes.
+Spin up your first **DartWay project** in minutes.
 
 ---
 

@@ -1,7 +1,7 @@
 ### App initialization and bindings
 ```dart
   DwApp(
-    title: 'Your Dart Way App',
+    title: 'Your DartWay App',
     routerProvider: appRouterProvider,
     dwConfig: DwConfig(
       defaultModelGetter: DwRepository.getDefault,

@@ -13,7 +13,7 @@ Things you actually need to proceed:
 
 ### Add DartWay dependencies
 
-First of all you need to add Dart Way dependencies to all three packages. Examples below suppose that you need dartwa_core and dartway_auth functionality
+First of all you need to add DartWay dependencies to all three packages. Examples below suppose that you need dartwa_core and dartway_auth functionality
 
 
 For your Client package add to pubspec.yaml:
@@ -62,7 +62,7 @@ For your Server package add to pubspec.yaml
 
 ## Setting up your Flutter app
 
-### Add Dart Way initialization code
+### Add DartWay initialization code
 
 In your Flutter package change your main.dart content to the following:
 
@@ -106,13 +106,13 @@ In this code you will have 4 Undefined names:
 
 The Serverpod Client - is the central class for accessing all methods of your server. We suggest to initialize it with AppCore.initServerpodClient method.
 
-> Why can't we ... put client initialization into the Dart Way packages?
+> Why can't we ... put client initialization into the DartWay packages?
 > - it's impossible, because it should have the exact type of your client generated in your Client package. And you might need access to it directly for the cases when you write your custom endpoints - which is 100% fine.
 
 
 ### Default Models
 
-Dart Way is built around generic Data layer - so that you can easily call get, delete and save methods for various classes inside your project and all Data and API logic would be handled for you.
+DartWay is built around generic Data layer - so that you can easily call get, delete and save methods for various classes inside your project and all Data and API logic would be handled for you.
 
 For various reasons it's not possible to setup these mechanisms without preliminary initialization. So, you need to setup it manually.
 Create a separate file (we recommend /lib/core/default_models.dart) with the following contents:

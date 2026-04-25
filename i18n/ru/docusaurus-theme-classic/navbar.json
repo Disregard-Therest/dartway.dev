@@ -1,0 +1,18 @@
+{
+  "title": {
+    "message": "DartWay",
+    "description": "The title in the navbar"
+  },
+  "item.label.Our Framework": {
+    "message": "Наш фреймворк",
+    "description": "Navbar item with label Our Framework"
+  },
+  "item.label.Education": {
+    "message": "Обучение",
+    "description": "Navbar item with label Education"
+  },
+  "item.label.Discuss a project": {
+    "message": "Обсудить проект",
+    "description": "Navbar item with label Discuss a project"
+  }
+}

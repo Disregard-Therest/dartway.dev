@@ -22,13 +22,203 @@
   background-color: var(--ifm-color-primary-dark);
 }
 
-/* Logo and title color in navbar */
+/* Dark navbar for documentation and inner pages */
+.navbar {
+  background: #05060c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
 .navbar__title {
-  color: var(--ifm-color-primary) !important;
+  color: #fff !important;
 }
 
 .navbar__brand svg path {
-  fill: var(--ifm-color-primary);
+  fill: #fff;
+}
+
+.navbar__brand {
+  gap: 0.75rem;
+}
+
+.navbar__logo {
+  width: 52px;
+  height: 52px;
+}
+
+.navbar__logo img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.navbar__title {
+  font-size: 1.12rem;
+}
+
+.navbar__link,
+.navbar__item,
+.navbar__toggle,
+.navbar .clean-btn {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.navbar__link:hover,
+.navbar__brand:hover .navbar__title,
+.navbar .clean-btn:hover {
+  color: #fff !important;
+}
+
+.navbar__items--right {
+  gap: 0.75rem;
+}
+
+.navbar__items--right .navbar__item {
+  margin: 0;
+}
+
+.navbarDiscussButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: var(--ifm-color-primary);
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(177, 0, 255, 0.34);
+}
+
+.navbarDiscussButton:hover {
+  background: var(--ifm-color-primary-dark);
+  color: #fff !important;
+  text-decoration: none;
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 112px;
+  padding: 1rem 2rem;
+  background: transparent;
+  box-shadow: none;
+  border-bottom: 0;
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner {
+  width: 100%;
+  margin: 0 auto;
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__logo {
+  width: 84px;
+  height: 84px;
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__logo img {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__title {
+  color: #fff !important;
+  font-size: 1.4rem;
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__link,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__item,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__toggle,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar .clean-btn {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__link:hover,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__brand:hover .navbar__title {
+  color: #fff !important;
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbarDiscussButton {
+  background: #fff;
+  color: #11131c !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.24);
+}
+
+#__docusaurus:has(.homePage, .frameworkPage) .navbarDiscussButton:hover {
+  background: rgba(255, 255, 255, 0.88);
+  color: #11131c !important;
+}
+
+@media (max-width: 996px) {
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar {
+    height: 80px;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__logo,
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__logo img {
+    width: 58px;
+    height: 58px;
+  }
+
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__title {
+    font-size: 1.1rem;
+  }
+
+  .navbar__inner {
+    position: relative;
+  }
+
+  .navbar__items {
+    min-width: 0;
+  }
+
+  .navbar__toggle {
+    position: absolute;
+    right: 0;
+    display: inherit;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .navbar__items--right {
+    display: none;
+  }
+
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__toggle {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .navbar__brand {
+    margin-right: 3rem;
+    min-width: 0;
+  }
+
+  .navbar__title {
+    max-width: 42vw;
+  }
+
+  .navbar-sidebar {
+    max-height: 100vh;
+    background: #05060c;
+    color: #fff;
+  }
+
+  .navbar-sidebar .menu__link,
+  .navbar-sidebar .navbar__item,
+  .navbar-sidebar .dropdown__link,
+  .navbar-sidebar .clean-btn {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .navbar-sidebar .menu__link:hover,
+  .navbar-sidebar .dropdown__link:hover,
+  .navbar-sidebar .clean-btn:hover {
+    color: #fff;
+  }
 }
 
 /* Optional: footer accent */
