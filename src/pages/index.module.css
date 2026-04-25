@@ -31,9 +31,18 @@
   line-height: 1;
 }
 
+.heroKicker {
+  max-width: 720px;
+  margin: 0.9rem 0 0;
+  color: var(--ifm-color-primary-lightest);
+  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .heroSubtitle {
   max-width: 680px;
-  margin: 1.5rem 0 0;
+  margin: 1.1rem 0 0;
   color: rgba(255, 255, 255, 0.78);
   font-size: 1.2rem;
   line-height: 1.55;
@@ -386,7 +395,7 @@
 
 @media (max-width: 640px) {
   .hero {
-    padding-top: 3.5rem;
+    padding-top: 7.25rem;
   }
 
   .heroMeta {

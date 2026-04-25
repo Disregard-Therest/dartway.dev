@@ -9,6 +9,7 @@ const content = {
     title: 'DartWay',
     description: 'DartWay builds mobile, web, and Telegram apps faster on a pre-built engineering foundation.',
     heroTitle: 'Apps in weeks, not months',
+    heroKicker: 'for product teams & agencies',
     heroSubtitle:
       'Proven core and pre-built modules - faster builds, easier scaling',
     heroMeta: ['MVPs from 4 weeks', '10+ projects', 'Ready architecture'],
@@ -42,7 +43,7 @@ const content = {
         facts: ['Listings', 'Chats', 'Stories', 'Payments'],
         metric: '> 5000 Users',
         result:
-          'Built a region-focused classifieds product with social mechanics and marketplace flows for everyday local transactions.',
+          'Helped the founder turn ideas into product, launch on a local market, and keep expanding the feature set.',
       },
     ],
     servicesTitle: 'What we can build',
@@ -75,6 +76,7 @@ const content = {
     title: 'DartWay',
     description: 'DartWay быстрее запускает мобильные, веб- и Telegram-приложения на готовом инженерном фундаменте.',
     heroTitle: 'Приложения за недели, не месяцы',
+    heroKicker: 'для продуктовых команд и агентств',
     heroSubtitle:
       'Проверенное ядро и готовые модули - быстрее разработка, проще масштабирование',
     heroMeta: ['MVP от 4 недель', '10+ проектов', 'Готовая архитектура'],
@@ -108,7 +110,7 @@ const content = {
         facts: ['Объявления', 'Чаты', 'Сториз', 'Платежи'],
         metric: '> 5000 Users',
         result:
-          'Собрали локальный classifieds-продукт с социальными механиками и marketplace-сценариями для повседневных региональных сделок.',
+          'Помогли основателю реализовать идеи, запуститься на локальном рынке и постоянно расширять функционал.',
       },
     ],
     servicesTitle: 'Что мы можем сделать',
@@ -148,6 +150,7 @@ export default function Home(): JSX.Element {
       <main className={styles.main}>
         <section className={styles.hero}>
           <h1 className={styles.heroTitle}>{t.heroTitle}</h1>
+          <p className={styles.heroKicker}>{t.heroKicker}</p>
           <p className={styles.heroSubtitle}>{t.heroSubtitle}</p>
           <div className={styles.heroButtons}>
             <Link className="button button--primary button--lg" to="https://t.me/eu_novikov">
