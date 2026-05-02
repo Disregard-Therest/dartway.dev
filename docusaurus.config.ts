@@ -5,8 +5,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'DartWay Product Studio',
-  tagline: 'Mobile, web, and Telegram apps built on a pre-built engineering foundation',
+  title: 'DartWay Framework',
+  tagline: 'Full-stack Dart framework on Flutter + Serverpod',
   favicon: 'favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -111,20 +111,14 @@ const config: Config = {
       },
       items: [
         {
-          to: '/framework',
+          to: '/docs/intro',
           position: 'right',
-          label: 'Our Framework',
+          label: 'Documentation',
         },
         {
           to: '/education/competency-map',
           position: 'right',
           label: 'Education',
-        },
-        {
-          href: 'https://t.me/eu_novikov',
-          label: 'Discuss a project',
-          position: 'right',
-          className: 'navbarDiscussButton',
         },
         {
           type: 'localeDropdown',

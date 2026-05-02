@@ -7,21 +7,21 @@ import styles from './index.module.css';
 const content = {
   en: {
     title: 'DartWay',
-    description: 'DartWay builds mobile, web, and Telegram apps faster on a pre-built engineering foundation.',
-    heroTitle: 'Apps in weeks, not months',
-    heroKicker: 'for product teams & agencies',
+    description: 'DartWay is a full-stack Flutter + Serverpod framework for shipping real products faster with stricter architecture and less boilerplate.',
+    heroTitle: 'Apps in days, not months',
+    heroKicker: 'for Flutter + Serverpod teams',
     heroSubtitle:
-      'Proven core and pre-built modules - faster builds, easier scaling',
-    heroMeta: ['MVPs from 4 weeks', '10+ projects', 'Ready architecture'],
-    primaryCta: 'Discuss a project',
-    secondaryCta: 'Our Framework',
+      'Strict architecture, generated structure, and ready product primitives so teams can build with less boilerplate and fewer architectural mistakes.',
+    heroMeta: ['3-5x faster delivery', '10+ shipped products', 'Flutter + Serverpod'],
+    primaryCta: 'Open documentation',
+    secondaryCta: 'GitHub',
     stats: [
-      ['Cross-platform', 'One codebase for iOS, Android, and Web = save money and be flexible.'],
-      ['Foundation', 'Authentication, admin panel, and chats work out of the box.'],
-      ['Predictability', 'Clear architecture and delivery process - no deadline slips or expensive rewrites.'],
+      ['Strict architecture', 'UI, local logic, domain logic, and shared components stay separated by default.'],
+      ['Typed product core', 'Models, CRUD rules, filters, and data flows stay explicit across frontend and backend.'],
+      ['AI-friendly codebase', 'Consistent patterns make generation, review, and scaling much more predictable.'],
     ],
-    casesTitle: 'Selected cases',
-    casesFooter: 'And dozens of other projects - from global e-comm to tiny startups.',
+    casesTitle: 'Products built with DartWay',
+    casesFooter: 'And dozens of other shipped flows, internal tools, and startup releases built on the same foundation.',
     cases: [
       {
         title: 'TVAITY',
@@ -46,49 +46,49 @@ const content = {
           'Helped the founder turn ideas into product, launch on a local market, and keep expanding the feature set.',
       },
     ],
-    servicesTitle: 'What we can build',
+    servicesTitle: 'What the framework gives you',
     services: [
-      ['MVPs for startups', 'Fast first versions with auth, backend, admin flows, payments, and analytics-ready structure.'],
-      ['Mobile apps', 'Cross-platform Flutter apps for iOS and Android with a shared codebase and stable architecture.'],
-      ['Telegram Web Apps', 'Product flows inside Telegram with backend, user profiles, roles, and real-time data.'],
-      ['Internal tools', 'Dashboards, CRMs, operational apps, and workflow automation for teams.'],
+      ['Feature-first structure', 'A predictable application layout for features, shared UI, local state, and domain logic.'],
+      ['Unified data pipeline', 'Backend models, API, validation, filters, persistence, and UI lists follow one model-driven flow.'],
+      ['Ready product primitives', 'Auth, roles, admin flows, CRUD configs, loading states, errors, and real-time updates are built in.'],
+      ['Cross-platform delivery', 'One Dart stack for iOS, Android, Web, and operational panels without fragmented architecture.'],
     ],
-    proofTitle: 'Why this is faster and safer',
+    proofTitle: 'Why teams switch to DartWay',
     proof: [
-      'We start from a tested application foundation instead of an empty repository.',
-      'Core patterns are fixed, so features stay predictable as the product grows.',
-      'Backend rules, validation, access control, and UI data flow are explicit.',
-      'AI can help produce code because the project has strict architectural boundaries.',
+      'It removes repeated glue code between models, backend rules, state, and UI.',
+      'It fixes core patterns early, so products do not drift into inconsistent architecture later.',
+      'It gives AI and engineers the same boundaries, which makes code generation and review safer.',
+      'It is already validated in production products, not just demo repositories.',
     ],
-    processTitle: 'How we work',
+    processTitle: 'How teams adopt it',
     process: [
-      ['Scope', 'Clarify product goals, users, risks, and the shortest useful release.'],
-      ['MVP', 'Build the first usable release with the core user flow, backend, and operational basics.'],
-      ['Launch', 'Prepare release, stabilize, monitor, and continue iterating after feedback.'],
-      ['Iterations', 'Ship improvements, expand the product, and keep regular releases based on feedback and usage.'],
+      ['Scaffold', 'Start from a full-stack DartWay base instead of assembling architecture from scratch.'],
+      ['Define', 'Describe models and rules once, then keep frontend and backend aligned through the same system.'],
+      ['Build', 'Ship features through shared patterns, typed APIs, reactive views, and reusable product modules.'],
+      ['Scale', 'Grow the product without rewriting the foundation every time the scope expands.'],
     ],
-    finalTitle: 'Have an app idea or a product backlog?',
+    finalTitle: 'Want to evaluate DartWay for your next product?',
     finalText:
-      'We can help turn it into a working Flutter product with a clear technical foundation.',
-    contactCta: 'Write on Telegram',
+      'Start with the docs, inspect the architecture, and reach out if you want to discuss adoption or a real product use case.',
+    contactCta: 'Join Telegram',
   },
   ru: {
     title: 'DartWay',
-    description: 'DartWay быстрее запускает мобильные, веб- и Telegram-приложения на готовом инженерном фундаменте.',
-    heroTitle: 'Приложения за недели, не месяцы',
-    heroKicker: 'для продуктовых команд и агентств',
+    description: 'DartWay — full-stack фреймворк на Flutter + Serverpod для более быстрой поставки продуктов со строгой архитектурой и меньшим количеством boilerplate.',
+    heroTitle: 'Приложения за дни, а не месяцы',
+    heroKicker: 'для команд на Flutter + Serverpod',
     heroSubtitle:
-      'Проверенное ядро и готовые модули - быстрее разработка, проще масштабирование',
-    heroMeta: ['MVP от 4 недель', '10+ проектов', 'Готовая архитектура'],
-    primaryCta: 'Обсудить проект',
-    secondaryCta: 'Наш фреймворк',
+      'Строгая архитектура, generated-структура и готовые продуктовые примитивы, чтобы команда писала меньше boilerplate и реже ошибалась в архитектуре.',
+    heroMeta: ['Разработка в 3-5 раз быстрее', '10+ запущенных продуктов', 'Flutter + Serverpod'],
+    primaryCta: 'Открыть документацию',
+    secondaryCta: 'GitHub',
     stats: [
-      ['Cross-platform', 'Один код для iOS, Android и Web = экономия и гибкость'],
-      ['Фундамент', 'Аутентификация, админка и чаты работают из коробки'],
-      ['Предсказуемость', 'Чёткая архитектура и процессы - без срыва сроков и переписываний'],
+      ['Строгая архитектура', 'UI, локальная логика, domain logic и shared-компоненты разделены по умолчанию.'],
+      ['Типизированное ядро', 'Модели, CRUD-правила, фильтры и data flow описаны явно и на frontend, и на backend.'],
+      ['AI-friendly кодовая база', 'Единые паттерны делают генерацию, ревью и масштабирование заметно предсказуемее.'],
     ],
-    casesTitle: 'Кейсы',
-    casesFooter: 'И десятки других проектов - от глобального e-commerce до крошечных стартапов.',
+    casesTitle: 'Продукты на DartWay',
+    casesFooter: 'И десятки других релизов, внутренних систем и стартап-продуктов, собранных на том же фундаменте.',
     cases: [
       {
         title: 'ТВАЙТИ',
@@ -113,31 +113,31 @@ const content = {
           'Помогли основателю реализовать идеи, запуститься на локальном рынке и постоянно расширять функционал.',
       },
     ],
-    servicesTitle: 'Что мы можем сделать',
+    servicesTitle: 'Что дает фреймворк',
     services: [
-      ['MVP для стартапов', 'Быстрые первые версии с авторизацией, backend, админскими сценариями, платежами и аналитикой.'],
-      ['Мобильные приложения', 'Кроссплатформенные Flutter-приложения для iOS и Android на общей кодовой базе.'],
-      ['Telegram Web Apps', 'Продуктовые сценарии внутри Telegram с backend, профилями, ролями и real-time данными.'],
-      ['Внутренние системы', 'Дашборды, CRM, операционные приложения и автоматизация процессов для команд.'],
+      ['Feature-first структура', 'Предсказуемая раскладка приложения по фичам, общему UI, локальному state и domain logic.'],
+      ['Единый data pipeline', 'Backend-модели, API, validation, filters, persistence и UI lists работают через один model-driven flow.'],
+      ['Готовые продуктовые примитивы', 'Auth, roles, admin flows, CRUD configs, loading states, errors и real-time updates уже встроены.'],
+      ['Кроссплатформенная поставка', 'Один Dart-стек для iOS, Android, Web и внутренних панелей без фрагментированной архитектуры.'],
     ],
-    proofTitle: 'Почему это быстрее и надежнее',
+    proofTitle: 'Почему команды переходят на DartWay',
     proof: [
-      'Мы начинаем с проверенного фундамента приложения, а не с пустого репозитория.',
-      'Базовые паттерны зафиксированы, поэтому продукт не разваливается при росте.',
-      'Backend-правила, валидация, доступы и UI data flow описаны явно.',
-      'AI может помогать писать код, потому что у проекта есть жесткие архитектурные границы.',
+      'Он убирает повторяющийся glue-код между моделями, backend-правилами, state и UI.',
+      'Он фиксирует базовые паттерны заранее, поэтому продукт не уходит в хаотичную архитектуру по мере роста.',
+      'Он задаёт одинаковые границы и для AI, и для инженеров, поэтому код проще генерировать и безопаснее ревьюить.',
+      'Он уже обкатан в продакшн-продуктах, а не только в демонстрационных репозиториях.',
     ],
-    processTitle: 'Как мы работаем',
+    processTitle: 'Как команды его внедряют',
     process: [
-      ['Scope', 'Фиксируем цели продукта, пользователей, риски и самый короткий полезный релиз.'],
-      ['MVP', 'Собираем первый рабочий релиз с основным пользовательским сценарием, backend и базовой операционной частью.'],
-      ['Launch', 'Готовим релиз, стабилизируем, смотрим обратную связь и продолжаем итерации.'],
-      ['Доработки', 'Выпускаем улучшения, расширяем продукт и поддерживаем регулярные релизы на основе обратной связи и использования.'],
+      ['Scaffold', 'Стартуют с full-stack базы DartWay вместо того, чтобы собирать архитектуру с нуля.'],
+      ['Define', 'Описывают модели и правила один раз, а потом держат frontend и backend синхронизированными в одной системе.'],
+      ['Build', 'Собирают фичи через общие паттерны, typed APIs, reactive views и переиспользуемые продуктовые модули.'],
+      ['Scale', 'Расширяют продукт без постоянного переписывания фундамента при каждом новом витке сложности.'],
     ],
-    finalTitle: 'Есть идея приложения или продуктовый backlog?',
+    finalTitle: 'Хотите оценить DartWay для следующего продукта?',
     finalText:
-      'Поможем превратить это в рабочий Flutter-продукт с понятным техническим фундаментом.',
-    contactCta: 'Написать в Telegram',
+      'Начните с документации, посмотрите архитектуру и напишите нам, если захотите обсудить внедрение или реальный продуктовый кейс.',
+    contactCta: 'Telegram-сообщество',
   },
 };
 
@@ -149,14 +149,15 @@ export default function Home(): JSX.Element {
     <Layout title={t.title} description={t.description} wrapperClassName="homePage">
       <main className={styles.main}>
         <section className={styles.hero}>
+          <p className={styles.eyebrow}>DartWay Framework</p>
           <h1 className={styles.heroTitle}>{t.heroTitle}</h1>
           <p className={styles.heroKicker}>{t.heroKicker}</p>
           <p className={styles.heroSubtitle}>{t.heroSubtitle}</p>
           <div className={styles.heroButtons}>
-            <Link className="button button--primary button--lg" to="https://t.me/eu_novikov">
+            <Link className="button button--primary button--lg" to="/docs/intro">
               {t.primaryCta}
             </Link>
-            <Link className={styles.secondaryCta} to="/framework">
+            <Link className={styles.secondaryCta} to="https://github.com/dartway/dartway">
               {t.secondaryCta}
             </Link>
           </div>
@@ -244,7 +245,7 @@ export default function Home(): JSX.Element {
         <section className={styles.ctaSection}>
           <h2>{t.finalTitle}</h2>
           <p>{t.finalText}</p>
-          <Link className="button button--primary button--lg" to="https://t.me/eu_novikov">
+          <Link className="button button--primary button--lg" to="https://t.me/dartway_dev">
             {t.contactCta}
           </Link>
         </section>
