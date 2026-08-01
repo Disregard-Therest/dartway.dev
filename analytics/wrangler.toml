@@ -2,11 +2,13 @@ name = "dartway-analytics"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
-# Fill database_id in after `wrangler d1 create dartway-analytics`.
 [[d1_databases]]
+# `binding` is the name the database has *in the code* — worker.js reaches it as
+# `env.DB`, so this stays "DB". `wrangler d1 create` suggests a binding derived
+# from the database name instead; take only the database_id from its output.
 binding = "DB"
 database_name = "dartway-analytics"
-database_id = ""
+database_id = "ef86bc92-6d3f-4169-998f-81eac7085d0a"
 
 [vars]
 # Comma-separated. The first one is also the fallback CORS origin.
