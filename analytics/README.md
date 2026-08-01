@@ -22,40 +22,58 @@ the source is Google Search Console, not this.
 
 ## Deploy
 
+Everything that needs the endpoint or the token reads them from `.env`, so none
+of these commands has a placeholder to fill in. Copy `.env.example` to `.env`
+first; `.env` is git-ignored and the token must stay out of the history.
+
 ```bash
 npm install -g wrangler
 wrangler login
 
 cd analytics
-wrangler d1 create dartway-analytics       # copy database_id into wrangler.toml
+wrangler d1 create dartway-analytics    # database_id goes into wrangler.toml
+                                        # (ignore the binding it suggests — ours is DB)
 wrangler d1 execute dartway-analytics --remote --file=schema.sql
-wrangler secret put STATS_TOKEN            # any long random string
-wrangler deploy
+cd ..
+
+npm run worker:deploy                   # prints the worker URL -> .env
+npm run worker:secret                   # sends STATS_TOKEN from .env to the worker
+npm run stats -- --test                 # sends a test event and reads it back
 ```
 
-`wrangler deploy` prints the worker URL. Then build the site with it set:
+`--remote` on the schema step is not optional: without it wrangler builds a
+local development database and the real one stays empty, which shows up later as
+a 500 from the worker and no obvious cause.
 
-```bash
-ANALYTICS_ENDPOINT=https://dartway-analytics.dartway.workers.dev npm run build
-```
-
-In CI, add the same value as a repository variable named `ANALYTICS_ENDPOINT`
-and pass it to the build step in `.github/workflows/deploy.yml`. **Without it
-the client module does nothing** — which is the correct state until the worker
-exists, and means the site can ship before any of this is set up.
+Then connect the site: add `ANALYTICS_ENDPOINT` as a **repository variable**
+(Settings → Secrets and variables → Actions → Variables — not a secret, those
+are not readable at build time) and run the Deploy workflow by hand, since the
+value only reaches the pages when they are built. **Until that happens the
+client module does nothing**, which is the correct state before the worker
+exists and is why the site could ship ahead of all this.
 
 ## Read the numbers
 
 ```bash
-curl -H "Authorization: Bearer $STATS_TOKEN" \
-  "https://dartway-analytics.dartway.workers.dev/stats?days=30"
+npm run stats                        # last 30 days, every site
+npm run stats -- --days 7
+npm run stats -- --site dartway.dev  # narrow to one site
+npm run stats -- --json              # raw response
+npm run stats -- --test              # send a test event first
 ```
 
-Returns JSON: a per-site total, then views per day, top paths, CTA clicks by
-name, top referrer hosts and top countries.
+The per-site totals stay unfiltered even with `--site`; they are there to
+compare.
 
-Add `&site=dartway.dev` to narrow everything to one site. The per-site totals
-stay unfiltered — they are there to compare.
+## Rotate the token
+
+```bash
+npm run token:new        # prints one, paste it into .env
+npm run worker:secret    # push it to the worker
+npm run stats -- --test  # confirm
+```
+
+Both sides have to match — changing only one gives 401.
 
 ## Google Search Console — do this first
 
