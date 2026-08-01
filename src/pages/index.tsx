@@ -88,10 +88,10 @@ export default function Home(): JSX.Element {
           <p className={styles.heroKicker}>{t.heroKicker}</p>
           <p className={styles.heroSubtitle}>{t.heroSubtitle}</p>
           <div className={styles.heroButtons}>
-            <Link className="button button--primary button--lg" to={DOCS_ENTRY}>
+            <Link className="button button--primary button--lg" to={DOCS_ENTRY} data-cta="hero-docs">
               {t.primaryCta}
             </Link>
-            <Link className={styles.secondaryCta} to={GITHUB_URL}>
+            <Link className={styles.secondaryCta} to={GITHUB_URL} data-cta="hero-github">
               {t.secondaryCta}
             </Link>
           </div>
@@ -179,7 +179,7 @@ export default function Home(): JSX.Element {
         <section className={styles.ctaSection}>
           <h2>{t.finalTitle}</h2>
           <p>{t.finalText}</p>
-          <Link className="button button--primary button--lg" to={TELEGRAM_URL}>
+          <Link className="button button--primary button--lg" to={TELEGRAM_URL} data-cta="footer-telegram">
             {t.contactCta}
           </Link>
         </section>

@@ -33,6 +33,14 @@ const config: Config = {
   // Requested by GitHub Pages for better behaviour with addresses.
   trailingSlash: false,
 
+  clientModules: ['./src/clientModules/analytics.ts'],
+
+  customFields: {
+    // Base URL of the counter in analytics/. Unset means the client module does
+    // nothing at all, which is the correct state until the worker is deployed.
+    analyticsEndpoint: process.env.ANALYTICS_ENDPOINT ?? '',
+  },
+
   // Machine-readable statement of what DartWay is, on every page. Search engines
   // use it for rich results; models use it to answer "what is this" without
   // having to infer it from prose.

@@ -42,6 +42,10 @@ jobs:
 
       - name: Build Docusaurus
         run: npm run build
+        env:
+          # Repository variable. Unset means the page counter stays inert, which
+          # is the correct state until the worker in analytics/ is deployed.
+          ANALYTICS_ENDPOINT: ${{ vars.ANALYTICS_ENDPOINT }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

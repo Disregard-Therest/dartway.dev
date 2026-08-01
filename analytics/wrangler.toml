@@ -1,0 +1,16 @@
+name = "dartway-analytics"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Fill database_id in after `wrangler d1 create dartway-analytics`.
+[[d1_databases]]
+binding = "DB"
+database_name = "dartway-analytics"
+database_id = ""
+
+[vars]
+# Comma-separated. The first one is also the fallback CORS origin.
+ALLOWED_ORIGINS = "https://dartway.dev"
+
+# STATS_TOKEN is a secret, not a var:
+#   wrangler secret put STATS_TOKEN
