@@ -105,7 +105,7 @@ Recorded so they are not silently re-litigated later.
 
 **English only.** The Russian locale is removed. Documentation originates in English in the
 monorepo, the framework's audience is international, and generative search works in English. The
-half-translated state the site was in — Russian navbar and education pages, English docs silently
+half-translated state the site was in — Russian navbar and learning pages, English docs silently
 falling back — was worse than either option.
 
 **Russian, if it ever returns, is a derived layer.** Not a Docusaurus locale: a separate URL prefix,
@@ -181,12 +181,26 @@ Still to do here: one landing page with consistent positioning and an explicit f
 it is → cases → quick start → Telegram. The cases need re-framing from agency language ("helped the
 founder…", DAU counts) to framework proof, which needs facts only the owner has.
 
-### Stage 3 — the competency map (the long work)
+### Stage 3 — the competency map — *first version shipped*
 
-Build the production line: a page template (definition → why it matters → what it looks like at
-junior/middle/senior/lead → what to learn → practice → where next), a hub page interlinking every
-topic, then sustained output. This is the content that can be AI-drafted and human-reviewed, and it
-is what brings the traffic.
+Shipped: six areas, forty-eight topic pages and a hub, at `/learn` (renamed from `/education`).
+The template is recorded in `learn/PAGE_TEMPLATE.md`; every page follows it, and 209 external links
+are verified by `npm run check-links`.
+
+**What these pages are was a deliberate decision.** They are maps, not tutorials: each frames a
+topic, gives a junior/middle/senior table for that specific skill, suggests practice, and points at
+the best material that already exists. Nothing here teaches a subject other people have already
+taught better. That choice keeps the pages honest — they make few version-specific claims, so they
+do not rot like a tutorial, and what they do assert is either structural or a link that resolves.
+
+**The SEO mechanism is therefore not what section 4.1 assumed.** Short orientation pages will not
+outrank long tutorials for "flutter state management". The map works differently: the hub is a
+shareable artefact in its own right — the thing people bookmark and link, as roadmap.sh is — and the
+topic pages give it depth and hold the reader. Ranking for competitive queries needs long-form
+writing, which is a blog job with a heavier verification process, not a map job.
+
+Still to do here: the six areas can go deeper, and the map should be revisited as the field moves —
+particularly the AI area, which is the one with the least settled material anywhere.
 
 ### Stage 4 — blog and social
 
@@ -198,7 +212,7 @@ per-channel variants.
 
 Done, and brought forward from its place in this list because it was cheap and because content
 should ship into it rather than have it retrofitted: `llms.txt` and `llms-full.txt` (generated at
-prebuild from `docs/` and `education/`, so they cannot drift), `robots.txt` explicitly welcoming the
+prebuild from `docs/` and `learn/`, so they cannot drift), `robots.txt` explicitly welcoming the
 AI crawlers, and `SoftwareApplication` JSON-LD.
 
 Still to do: per-page `TechArticle` structured data — which needs swizzling the doc page, unlike the

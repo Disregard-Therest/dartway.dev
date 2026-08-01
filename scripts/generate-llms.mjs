@@ -42,8 +42,8 @@ const SOURCES = [
     note: 'The framework itself. Synced from the dartway/dartway monorepo.',
   },
   {
-    dir: 'education',
-    urlPrefix: '/education',
+    dir: 'learn',
+    urlPrefix: '/learn',
     heading: 'Learning',
     note: 'The Flutter developer competency map and its topics.',
   },
@@ -86,7 +86,10 @@ function collect(root, source) {
       if (entry.isDirectory()) {
         walk(full);
       } else if (entry.name.endsWith('.md')) {
-        pages.push(readPage(full, root, source));
+        const page = readPage(full, root, source);
+        // Docusaurus drops drafts from a production build, so indexing one
+        // would advertise a URL that 404s.
+        if (!page.draft) pages.push(page);
       }
     }
   };
@@ -102,6 +105,7 @@ function readPage(file, root, source) {
   const relative = path.relative(root, file).split(path.sep).join('/');
 
   return {
+    draft: frontmatter.draft === 'true',
     url: SITE_URL + pageUrl(relative, frontmatter, source),
     title: frontmatter.title ?? firstHeading(body) ?? path.basename(file, '.md'),
     summary: frontmatter.description ?? firstParagraph(body),
@@ -116,7 +120,9 @@ function readPage(file, root, source) {
 function pageUrl(relative, frontmatter, source) {
   if (frontmatter.slug) {
     const slug = frontmatter.slug.startsWith('/') ? frontmatter.slug : `/${frontmatter.slug}`;
-    return `${source.urlPrefix}${slug}`;
+    // `slug: /` puts a section's index at its root, and naive concatenation
+    // gives it a trailing slash the site does not serve — trailingSlash is off.
+    return stripTrailingSlash(`${source.urlPrefix}${slug}`);
   }
 
   const segments = relative
@@ -124,7 +130,11 @@ function pageUrl(relative, frontmatter, source) {
     .split('/')
     .map(stripNumericPrefix);
 
-  return `${source.urlPrefix}/${segments.join('/')}`;
+  return stripTrailingSlash(`${source.urlPrefix}/${segments.join('/')}`);
+}
+
+function stripTrailingSlash(url) {
+  return url.length > 1 ? url.replace(/\/+$/, '') : url;
 }
 
 /** `1-getting-started` -> `getting-started`, matching Docusaurus. */

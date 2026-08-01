@@ -30,7 +30,7 @@ npm run sync-docs -- --branch stable   # sync from another branch
 The sync also runs daily in CI ([`sync-docs.yml`](.github/workflows/sync-docs.yml)): it pulls,
 verifies the site still builds, commits only if it does, and then deploys.
 
-Hand-written content lives in `education/` (the competency map), `src/pages/` (the landing) and
+Hand-written content lives in `learn/` (the competency map), `src/pages/` (the landing) and
 `src/css/`.
 
 ## Deployment

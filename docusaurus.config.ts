@@ -102,10 +102,10 @@ const config: Config = {
     [
       '@docusaurus/plugin-content-docs',
       {
-        id: 'education',
-        path: 'education',
-        routeBasePath: 'education',
-        sidebarPath: './educationSidebars.ts',
+        id: 'learn',
+        path: 'learn',
+        routeBasePath: 'learn',
+        sidebarPath: './learnSidebars.ts',
       } satisfies Preset.Options['docs'],
     ],
   ],
@@ -133,9 +133,9 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          to: '/education/competency-map',
+          to: '/learn',
           position: 'right',
-          label: 'Education',
+          label: 'Learn',
         },
       ],
     },

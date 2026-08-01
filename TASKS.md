@@ -27,11 +27,12 @@ Nothing here can be done from inside the repository.
       founder…", DAU counts). For a framework the framing should be what was built on it and what it
       holds up to. Needs facts only the owner has.
 - [ ] **Landing: make the funnel explicit** — hero → what it is → cases → quick start → Telegram.
-- [ ] **Stage 3: start the competency map.** The site's growth engine and the longest piece of work.
-      First: the page template (definition → why it matters → what it looks like at each level →
-      what to learn → practice → where next), then the hub page interlinking every topic, then
-      sustained output. Written neutral about Flutter development, with DartWay as the answer at the
-      end of each page, never the premise. See CLAUDE.md for the rules.
+- [ ] **Deepen the competency map.** The first version is shipped — six areas, 48 topics. Next:
+      revisit the AI area as the field moves, and consider whether any topic deserves a second page.
+- [ ] **Long-form writing for competitive queries.** The map cannot rank for "flutter state
+      management" — that needs depth, which means the blog and the heavier verification process
+      discussed with it: every factual claim sourced, every code sample compiled, and the owner's
+      own experience for the parts a model cannot invent.
 
 ## Later
 
@@ -73,6 +74,11 @@ Nothing here can be done from inside the repository.
       Docusaurus to move first. Adopted `@docusaurus/faster` (Rspack + SWC), which `future.v4`
       now requires and v4 will make the default. Turned the blog off explicitly — preset-classic
       enables it unless told otherwise and 3.10 started publishing an empty `/blog`.
+- [x] **The competency map, first version.** `/education` renamed to `/learn`; six areas, 48 topic
+      pages and a hub. Template recorded in `learn/PAGE_TEMPLATE.md`, every external link verified by
+      `npm run check-links`.
+- [x] `npm run check-links` — external link verification for `learn/`, because a curated link that
+      404s is worse than no link.
 - [x] Node 20 → 24 in both workflows; updated the actions themselves (checkout, setup-node,
       upload-pages-artifact, deploy-pages), which is what the deprecation warning was actually
       about; removed the dead `dartway_guidelines` git remote.
