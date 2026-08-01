@@ -4,7 +4,11 @@ This is **dartway.dev**: the Docusaurus site for the DartWay framework. Deployed
 from `master` by `.github/workflows/deploy.yml`, served on the apex domain via `static/CNAME`.
 
 Read [STRATEGY.md](STRATEGY.md) first. It holds the concept, the decisions taken and why, and the
-roadmap. This file is only the operating rules.
+roadmap. [TASKS.md](TASKS.md) is the working list — what is open, what is done, and what is waiting
+on the owner rather than on work. Keep it current; a task list that has to be reconstructed from
+memory each session is not one.
+
+This file is only the operating rules.
 
 ---
 

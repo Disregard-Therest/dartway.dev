@@ -9,9 +9,12 @@ const config: Config = {
   tagline: 'Full-stack Dart framework on Flutter + Serverpod',
   favicon: 'favicon.ico',
 
-  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
+  // Compatibility with the upcoming Docusaurus v4.
+  // Note that `v4: true` also turns on Docusaurus Faster (Rspack + SWC), which
+  // is why @docusaurus/faster is a dependency — v4 makes it the default anyway,
+  // and the docs sync rebuilds the site every day.
   future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
+    v4: true,
   },
 
   url: 'https://dartway.dev',
@@ -20,7 +23,6 @@ const config: Config = {
   projectName: 'dartway.dev',
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
 
   markdown: {
     // .md is parsed as CommonMark, only .mdx as MDX. docs/ is synced verbatim
@@ -28,6 +30,9 @@ const config: Config = {
     // `DwCrudConfig<T>`; under MDX those are read as JSX and break the build.
     // Nobody proofreads a sync, so the guarantee has to be structural.
     format: 'detect',
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
   },
 
   // Requested by GitHub Pages for better behaviour with addresses.
@@ -81,21 +86,11 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
         },
-        // blog: {
-        //   showReadingTime: true,
-        //   feedOptions: {
-        //     type: ['rss', 'atom'],
-        //     xslt: true,
-        //   },
-        //   // Please change this to your repo.
-        //   // Remove this to remove the "edit this page" links.
-        //   editUrl:
-        //     'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-        //   // Useful options to enforce blogging best practices
-        //   onInlineTags: 'warn',
-        //   onInlineAuthors: 'warn',
-        //   onUntruncatedBlogPosts: 'warn',
-        // },
+        // preset-classic enables the blog unless told otherwise, and since 3.10
+        // it publishes an empty /blog even with no posts. Off until stage 4
+        // turns it on deliberately — an empty page is not something to leave
+        // for Google to index.
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
