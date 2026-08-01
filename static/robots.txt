@@ -1,0 +1,38 @@
+# dartway.dev
+#
+# Everything here is meant to be read, indexed and quoted — by search engines
+# and by language models alike. Being cited when someone asks a model about
+# fullstack Dart is a channel we want, not one we defend against, so the AI
+# crawlers below are allowed on purpose. Do not "tidy up" by blocking them.
+
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://dartway.dev/sitemap.xml

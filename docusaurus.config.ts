@@ -15,20 +15,9 @@ const config: Config = {
   },
 
   url: 'https://dartway.dev',
-  baseUrl: '/', //process.env.BASE_URL || '/dartway.dev/',
+  baseUrl: '/',
   organizationName: 'Disregard-Therest',
   projectName: 'dartway.dev',
-
-  // // Set the production url of your site here
-  // url: 'https://your-docusaurus-site.example.com',
-  // // Set the /<baseUrl>/ pathname under which your site is served
-  // // For GitHub pages deployment, it is often '/<projectName>/'
-  // baseUrl: '/',
-
-  // // GitHub pages deployment config.
-  // // If you aren't using GitHub pages, you don't need these.
-  // organizationName: 'facebook', // Usually your GitHub org/user name.
-  // projectName: 'docusaurus', // Usually your repo name.
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -41,8 +30,34 @@ const config: Config = {
     format: 'detect',
   },
 
-  // Added by me
-  trailingSlash: false, // requested by GitHub Pages for better behaviour with addresses
+  // Requested by GitHub Pages for better behaviour with addresses.
+  trailingSlash: false,
+
+  // Machine-readable statement of what DartWay is, on every page. Search engines
+  // use it for rich results; models use it to answer "what is this" without
+  // having to infer it from prose.
+  headTags: [
+    {
+      tagName: 'script',
+      attributes: { type: 'application/ld+json' },
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'DartWay',
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Android, iOS, Web',
+        programmingLanguage: 'Dart',
+        url: 'https://dartway.dev',
+        codeRepository: 'https://github.com/dartway/dartway',
+        license: 'https://www.apache.org/licenses/LICENSE-2.0',
+        description:
+          'A fullstack framework for building an application in one language. Serverpod runs the ' +
+          'server, Flutter runs the client, and DartWay is the layer over both: you declare a model ' +
+          'and configure who may do what with it, instead of writing an endpoint per operation.',
+        author: { '@type': 'Person', name: 'Evgenii Novikov' },
+      }),
+    },
+  ],
 
   // English only — see STRATEGY.md. If Russian ever returns it is a derived
   // layer on its own URL prefix, not a Docusaurus locale.
