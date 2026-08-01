@@ -1,0 +1,12 @@
+# Line endings are LF in the repository, on every platform.
+#
+# docs/ is synced by a script that runs both locally (Windows, where git's
+# autocrlf would otherwise hand it CRLF) and in CI (Linux, LF). Without this,
+# the two produce byte-different copies of identical content and every sync
+# rewrites all 21 files — a diff that hides the real change inside it.
+* text=auto eol=lf
+
+# Binary assets git must never touch.
+*.png binary
+*.webp binary
+*.ico binary

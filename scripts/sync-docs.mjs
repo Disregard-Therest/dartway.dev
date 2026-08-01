@@ -155,7 +155,7 @@ function buildOutput(sourceRoot, pages) {
   const unknownSections = [];
 
   for (const page of pages) {
-    const raw = fs.readFileSync(path.join(sourceRoot, page), 'utf8');
+    const raw = readAsLf(path.join(sourceRoot, page));
     files.set(page, transformPage(raw, page));
 
     const section = page.includes('/') ? page.slice(0, page.indexOf('/')) : null;
@@ -243,7 +243,7 @@ function reportDrift(files) {
   const added = [...files.keys()].filter((f) => !onDisk.has(f));
   const removed = [...onDisk].filter((f) => !files.has(f));
   const changed = [...files.entries()]
-    .filter(([f, content]) => onDisk.has(f) && fs.readFileSync(path.join(DEST, f), 'utf8') !== content)
+    .filter(([f, content]) => onDisk.has(f) && readAsLf(path.join(DEST, f)) !== content)
     .map(([f]) => f);
 
   if (added.length === 0 && removed.length === 0 && changed.length === 0) {
@@ -256,6 +256,19 @@ function reportDrift(files) {
   for (const f of changed) console.log(`  ~ ${f}`);
   console.log(`\ndocs/ is stale: ${added.length} added, ${removed.length} removed, ${changed.length} changed.`);
   process.exitCode = 1;
+}
+
+/**
+ * Read a file with line endings forced to LF.
+ *
+ * The temporary clone goes through the same git config as everything else, so
+ * on a machine with autocrlf the upstream markdown arrives as CRLF while CI
+ * reads it as LF. Left alone, the two write byte-different copies of identical
+ * content and each sync rewrites every file. .gitattributes pins the repository
+ * side; this pins the script so it does not depend on git config at all.
+ */
+function readAsLf(file) {
+  return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 }
 
 function git(args, cwd) {
