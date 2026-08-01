@@ -3,6 +3,9 @@ name: Deploy Docusaurus to GitHub Pages
 on:
   push:
     branches: [ "master" ]
+  # Rebuild without a commit — needed after changing a repository variable such
+  # as ANALYTICS_ENDPOINT, which only reaches the site at build time.
+  workflow_dispatch:
   # Callable so sync-docs.yml can deploy the commit it just pushed. A push made
   # with GITHUB_TOKEN does not trigger workflows, so the sync has to ask.
   workflow_call:
