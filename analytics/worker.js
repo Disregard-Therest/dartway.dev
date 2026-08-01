@@ -1,5 +1,11 @@
 /**
- * dartway.dev — the page counter.
+ * The DartWay page counter.
+ *
+ * One worker and one database for every DartWay site — dartway.dev today,
+ * dartway.studio later. Events are told apart by `site`, taken from the Origin
+ * header the worker already validates, so a payload cannot claim to be another
+ * site. One deployment, one token, one schema, and both sites comparable in a
+ * single query.
  *
  * A Cloudflare Worker with a D1 database behind it. Two routes:
  *
@@ -71,10 +77,13 @@ async function record(request, env, origin) {
 
   try {
     await env.DB.prepare(
-      'INSERT INTO events (ts, kind, path, referrer, country) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO events (ts, site, kind, path, referrer, country) VALUES (?, ?, ?, ?, ?, ?)',
     )
       .bind(
         Math.floor(Date.now() / 1000),
+        // From the Origin header, which was just checked against the allowed
+        // list — not from the payload, which anyone could write.
+        new URL(origin).host,
         kind,
         path,
         referrerHost(event.referrer),
@@ -98,28 +107,46 @@ async function stats(request, env, url) {
   const days = Math.min(Math.max(Number(url.searchParams.get('days')) || 30, 1), 365);
   const since = Math.floor(Date.now() / 1000) - days * 86400;
 
-  const query = (sql) => env.DB.prepare(sql).bind(since).all().then((r) => r.results);
+  // ?site=dartway.dev narrows everything except the `sites` breakdown, which is
+  // there precisely to compare them.
+  const site = url.searchParams.get('site');
+  const narrow = site ? 'AND site = ?' : '';
+  const args = site ? [since, site] : [since];
 
-  const [daily, pages, ctas, referrers, countries] = await Promise.all([
+  const query = (sql) =>
+    env.DB.prepare(sql)
+      .bind(...args)
+      .all()
+      .then((r) => r.results);
+
+  const [sites, daily, pages, ctas, referrers, countries] = await Promise.all([
+    env.DB.prepare(
+      `SELECT site, COUNT(*) AS views
+       FROM events WHERE ts >= ? AND kind = 'pageview'
+       GROUP BY site ORDER BY views DESC`,
+    )
+      .bind(since)
+      .all()
+      .then((r) => r.results),
     query(`SELECT date(ts, 'unixepoch') AS day, COUNT(*) AS views
-           FROM events WHERE ts >= ? AND kind = 'pageview'
+           FROM events WHERE ts >= ? AND kind = 'pageview' ${narrow}
            GROUP BY day ORDER BY day`),
     query(`SELECT path, COUNT(*) AS views
-           FROM events WHERE ts >= ? AND kind = 'pageview'
+           FROM events WHERE ts >= ? AND kind = 'pageview' ${narrow}
            GROUP BY path ORDER BY views DESC LIMIT 50`),
     query(`SELECT kind, COUNT(*) AS clicks
-           FROM events WHERE ts >= ? AND kind != 'pageview'
+           FROM events WHERE ts >= ? AND kind != 'pageview' ${narrow}
            GROUP BY kind ORDER BY clicks DESC`),
     query(`SELECT referrer, COUNT(*) AS views
-           FROM events WHERE ts >= ? AND referrer IS NOT NULL
+           FROM events WHERE ts >= ? AND referrer IS NOT NULL ${narrow}
            GROUP BY referrer ORDER BY views DESC LIMIT 30`),
     query(`SELECT country, COUNT(*) AS views
-           FROM events WHERE ts >= ? AND country IS NOT NULL
+           FROM events WHERE ts >= ? AND country IS NOT NULL ${narrow}
            GROUP BY country ORDER BY views DESC LIMIT 30`),
   ]);
 
   return Response.json(
-    { days, daily, pages, ctas, referrers, countries },
+    { days, site: site ?? 'all', sites, daily, pages, ctas, referrers, countries },
     { headers: { 'Cache-Control': 'no-store' } },
   );
 }

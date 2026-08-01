@@ -1,8 +1,18 @@
 # The page counter
 
-A Cloudflare Worker with a D1 database. Counts pageviews and CTA clicks for
-dartway.dev, stores no cookies and no IP addresses, and therefore needs no
-consent banner.
+A Cloudflare Worker with a D1 database. Counts pageviews and CTA clicks, stores
+no cookies and no IP addresses, and therefore needs no consent banner.
+
+**One counter serves every DartWay site** — dartway.dev now, dartway.studio
+later — rather than one deployment per site. Splitting them would double the
+worker, the database, the token and every schema change, and comparing the two
+would take two requests and manual arithmetic. Cloudflare's limits are counted
+per account anyway, so separating buys no headroom.
+
+Which site an event belongs to is taken from the `Origin` header, which the
+worker already checks against `ALLOWED_ORIGINS` — not from the request body,
+which anyone could write. Adding a site is therefore one entry in that list and
+no client change at all.
 
 **What it does not do:** unique visitors. Counting people means identifying
 them, and nothing here identifies anyone. The numbers are volume and direction —
@@ -41,8 +51,11 @@ curl -H "Authorization: Bearer $STATS_TOKEN" \
   "https://dartway-analytics.<subdomain>.workers.dev/stats?days=30"
 ```
 
-Returns JSON: views per day, top paths, CTA clicks by name, top referrer hosts,
-top countries.
+Returns JSON: a per-site total, then views per day, top paths, CTA clicks by
+name, top referrer hosts and top countries.
+
+Add `&site=dartway.dev` to narrow everything to one site. The per-site totals
+stay unfiltered — they are there to compare.
 
 ## Google Search Console — do this first
 

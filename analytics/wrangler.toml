@@ -10,6 +10,10 @@ database_id = ""
 
 [vars]
 # Comma-separated. The first one is also the fallback CORS origin.
+#
+# This list is also what tells sites apart: an accepted event is filed under the
+# host of its Origin. Adding a site is one entry here — e.g.
+# "https://dartway.dev,https://dartway.studio" — and nothing else.
 ALLOWED_ORIGINS = "https://dartway.dev"
 
 # STATS_TOKEN is a secret, not a var:
