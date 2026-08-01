@@ -14,10 +14,9 @@ Nothing here can be done from inside the repository.
 - [x] **Connect Google Search Console.** Done 2026-08-01.
 - [ ] **Submit the sitemap** — `sitemap.xml` in the Sitemaps section of Search Console. The live
       sitemap now lists the new structure, 25 URLs.
-- [ ] **Deploy the page counter.** The code is written and shipped; nothing is being counted until
-      the Cloudflare worker exists. Steps in [analytics/README.md](analytics/README.md): create the
-      D1 database, run the schema, set `STATS_TOKEN`, `wrangler deploy`, then add the worker URL as
-      the `ANALYTICS_ENDPOINT` repository variable. Until then the client module is inert by design.
+- [x] **Deploy the page counter.** Done 2026-08-01. Live at
+      `dartway-analytics.dartway.workers.dev`, verified end to end: event recorded, stats read back,
+      and the endpoint present in the published bundle. Read it with `npm run stats`.
 - [ ] **Bing Webmaster Tools** — optional, imports the Search Console property in one step. Its index
       feeds several AI search products.
 - [ ] **Facts for the landing cases** — see "Landing" below.
@@ -74,4 +73,9 @@ Nothing here can be done from inside the repository.
       Docusaurus to move first. Adopted `@docusaurus/faster` (Rspack + SWC), which `future.v4`
       now requires and v4 will make the default. Turned the blog off explicitly — preset-classic
       enables it unless told otherwise and 3.10 started publishing an empty `/blog`.
-- [x] Node 20 → 24 in both workflows; removed the dead `dartway_guidelines` git remote.
+- [x] Node 20 → 24 in both workflows; updated the actions themselves (checkout, setup-node,
+      upload-pages-artifact, deploy-pages), which is what the deprecation warning was actually
+      about; removed the dead `dartway_guidelines` git remote.
+- [x] `tools/` — `npm run stats`, `worker:secret`, `worker:deploy`, `token:new`. Endpoint and token
+      come from a git-ignored `.env`, so no command in the runbook carries a placeholder.
+- [x] The counter is live and counting.

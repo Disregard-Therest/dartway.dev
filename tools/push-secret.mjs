@@ -19,11 +19,19 @@ const cwd = path.join(ROOT, 'analytics');
 
 console.log('Sending STATS_TOKEN from .env to the worker…');
 
-const wrangler = spawn(
-  process.platform === 'win32' ? 'wrangler.cmd' : 'wrangler',
-  ['secret', 'put', 'STATS_TOKEN'],
-  { cwd, stdio: ['pipe', 'inherit', 'inherit'] },
-);
+// On Windows `wrangler` is a .cmd, and Node has refused to spawn .cmd/.bat
+// directly since the CVE-2024-27980 fix — it answers EINVAL. Go through the
+// command interpreter explicitly rather than passing `shell: true`, which would
+// also work but warns (DEP0190) about arguments being concatenated unescaped.
+const [command, commandArgs] =
+  process.platform === 'win32'
+    ? [process.env.COMSPEC || 'cmd.exe', ['/d', '/s', '/c', 'wrangler secret put STATS_TOKEN']]
+    : ['wrangler', ['secret', 'put', 'STATS_TOKEN']];
+
+const wrangler = spawn(command, commandArgs, {
+  cwd,
+  stdio: ['pipe', 'inherit', 'inherit'],
+});
 
 wrangler.on('error', (error) => {
   fail(
@@ -37,7 +45,9 @@ wrangler.stdin.end(env.STATS_TOKEN);
 
 wrangler.on('close', (code) => {
   if (code === 0) {
-    console.log('\nDone. Check it with:  npm run stats -- --test');
+    console.log('\nDone. Cloudflare takes a few seconds to roll the secret out, so');
+    console.log('an immediate 401 is expected — give it a moment, then:');
+    console.log('  npm run stats -- --test');
   } else {
     console.error(`\nwrangler exited with ${code}.`);
     console.error('If it is an authentication error, run `wrangler login` first.');

@@ -11,7 +11,7 @@
  * Endpoint and token come from .env, so there is nothing to substitute by hand.
  */
 
-import { requireEnv, fail } from './env.mjs';
+import { requireEnv, fail, run } from './env.mjs';
 
 const args = process.argv.slice(2);
 const flag = (name, fallback = null) => {
@@ -20,38 +20,41 @@ const flag = (name, fallback = null) => {
 };
 
 const env = requireEnv('ANALYTICS_ENDPOINT', 'STATS_TOKEN');
-const days = flag('days', '30');
-const site = flag('site');
 
-if (args.includes('--test')) await sendTestEvent();
+await run(async () => {
+  if (args.includes('--test')) await sendTestEvent();
 
-const url = new URL(`${env.ANALYTICS_ENDPOINT}/stats`);
-url.searchParams.set('days', days);
-if (site) url.searchParams.set('site', site);
+  const url = new URL(`${env.ANALYTICS_ENDPOINT}/stats`);
+  url.searchParams.set('days', flag('days', '30'));
+  if (flag('site')) url.searchParams.set('site', flag('site'));
 
-const response = await fetch(url, {
-  headers: { Authorization: `Bearer ${env.STATS_TOKEN}` },
-}).catch((error) => fail(`Could not reach ${env.ANALYTICS_ENDPOINT}\n${error.message}`));
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${env.STATS_TOKEN}` },
+  }).catch((error) => fail(`Could not reach ${env.ANALYTICS_ENDPOINT}\n${error.message}`));
 
-if (response.status === 401) {
-  fail(
-    'The worker rejected the token (401).\n' +
-      'STATS_TOKEN in .env and the one on the worker disagree.\n' +
-      'Push the local one with:  npm run worker:secret',
-  );
-}
-if (!response.ok) {
-  fail(`The worker answered ${response.status}.\n${(await response.text()).slice(0, 400)}`);
-}
+  if (response.status === 401) {
+    fail(
+      'The worker rejected the token (401).\n\n' +
+        'If you have just run `npm run worker:secret`, wait a few seconds and try\n' +
+        'again — Cloudflare takes a moment to roll a secret out, and until it does\n' +
+        'the worker is still checking against the old one.\n\n' +
+        'Otherwise STATS_TOKEN in .env and the one on the worker disagree:\n' +
+        '  npm run worker:secret',
+    );
+  }
+  if (!response.ok) {
+    fail(`The worker answered ${response.status}.\n${(await response.text()).slice(0, 400)}`);
+  }
 
-const data = await response.json();
+  const data = await response.json();
 
-if (args.includes('--json')) {
-  console.log(JSON.stringify(data, null, 2));
-  process.exit(0);
-}
+  if (args.includes('--json')) {
+    console.log(JSON.stringify(data, null, 2));
+    return;
+  }
 
-report(data);
+  report(data);
+});
 
 async function sendTestEvent() {
   const response = await fetch(`${env.ANALYTICS_ENDPOINT}/e`, {

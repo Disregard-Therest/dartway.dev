@@ -52,7 +52,27 @@ export function requireEnv(...keys) {
   return env;
 }
 
+/** Thrown by fail(), caught by run() — see why there rather than here. */
+export class Bail extends Error {}
+
 export function fail(message) {
   console.error(`\n${message}\n`);
-  process.exit(1);
+  throw new Bail(message);
+}
+
+/**
+ * Runs a tool and exits non-zero if it bailed.
+ *
+ * `process.exit()` would be the obvious way to end on an error, but calling it
+ * while fetch still holds a keep-alive socket crashes the Windows build of
+ * libuv with an assertion — which buries the actual error message under a stack
+ * trace. Setting exitCode and letting the process end on its own does not.
+ */
+export async function run(main) {
+  try {
+    await main();
+  } catch (error) {
+    if (!(error instanceof Bail)) throw error;
+    process.exitCode = 1;
+  }
 }
