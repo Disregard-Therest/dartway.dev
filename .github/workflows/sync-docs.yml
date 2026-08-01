@@ -1,0 +1,90 @@
+name: Sync docs from the framework monorepo
+
+# docs/ is a generated copy of docs/ in dartway/dartway. This pulls it, proves
+# the site still builds, and only then commits. A sync that would break the
+# deploy stops here instead of on the deploy.
+
+on:
+  schedule:
+    - cron: '0 5 * * *'   # daily, 05:00 UTC
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Monorepo branch to sync from (default: whatever sync-docs.mjs pins)'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sync-docs
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Sync docs
+        run: |
+          if [ -n "${{ inputs.branch }}" ]; then
+            npm run sync-docs -- --branch "${{ inputs.branch }}"
+          else
+            npm run sync-docs
+          fi
+
+      - name: Anything changed?
+        id: diff
+        run: |
+          if git diff --quiet -- docs; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "docs/ is already up to date."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- docs
+          fi
+
+      # Before committing, not after. onBrokenLinks is set to throw, so an
+      # upstream page linking somewhere the site cannot resolve fails here.
+      - name: Verify the site still builds
+        if: steps.diff.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Commit
+        id: commit
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs
+          git commit -m 'docs: sync from dartway/dartway'
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.sha != ''
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.sync.outputs.sha }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

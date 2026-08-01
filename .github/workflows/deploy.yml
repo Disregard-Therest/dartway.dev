@@ -2,7 +2,16 @@ name: Deploy Docusaurus to GitHub Pages
 
 on:
   push:
-    branches: [ "master" ]   # поменяй, если у тебя другой прод-бренч
+    branches: [ "master" ]
+  # Callable so sync-docs.yml can deploy the commit it just pushed. A push made
+  # with GITHUB_TOKEN does not trigger workflows, so the sync has to ask.
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit or branch to deploy. Empty means the triggering ref.'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -19,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4

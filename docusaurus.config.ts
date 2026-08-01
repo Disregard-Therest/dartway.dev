@@ -33,23 +33,22 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
+  markdown: {
+    // .md is parsed as CommonMark, only .mdx as MDX. docs/ is synced verbatim
+    // from the dartway/dartway monorepo and its prose is full of generics like
+    // `DwCrudConfig<T>`; under MDX those are read as JSX and break the build.
+    // Nobody proofreads a sync, so the guarantee has to be structural.
+    format: 'detect',
+  },
+
   // Added by me
   trailingSlash: false, // requested by GitHub Pages for better behaviour with addresses
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
+  // English only — see STRATEGY.md. If Russian ever returns it is a derived
+  // layer on its own URL prefix, not a Docusaurus locale.
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'ru'],
-    localeConfigs: {
-      en: {
-        label: 'English',
-      },
-      ru: {
-        label: 'Русский',
-      },
-    },
+    locales: ['en'],
   },
 
   presets: [
@@ -111,7 +110,7 @@ const config: Config = {
       },
       items: [
         {
-          to: '/docs/intro',
+          to: '/docs/getting-started/what-is-dartway',
           position: 'right',
           label: 'Documentation',
         },
@@ -119,10 +118,6 @@ const config: Config = {
           to: '/education/competency-map',
           position: 'right',
           label: 'Education',
-        },
-        {
-          type: 'localeDropdown',
-          position: 'right',
         },
       ],
     },
