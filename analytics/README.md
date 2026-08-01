@@ -36,7 +36,7 @@ wrangler deploy
 `wrangler deploy` prints the worker URL. Then build the site with it set:
 
 ```bash
-ANALYTICS_ENDPOINT=https://dartway-analytics.<subdomain>.workers.dev npm run build
+ANALYTICS_ENDPOINT=https://dartway-analytics.dartway.workers.dev npm run build
 ```
 
 In CI, add the same value as a repository variable named `ANALYTICS_ENDPOINT`
@@ -48,7 +48,7 @@ exists, and means the site can ship before any of this is set up.
 
 ```bash
 curl -H "Authorization: Bearer $STATS_TOKEN" \
-  "https://dartway-analytics.<subdomain>.workers.dev/stats?days=30"
+  "https://dartway-analytics.dartway.workers.dev/stats?days=30"
 ```
 
 Returns JSON: a per-site total, then views per day, top paths, CTA clicks by
