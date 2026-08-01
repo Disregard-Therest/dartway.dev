@@ -165,10 +165,21 @@ would survive MDX, but that is luck, and nobody will proofread every future sync
 
 Still open in this stage: **search** — 22 pages is already past the point where browsing works.
 
-### Stage 2 — landing, analytics, CTA
+### Stage 2 — landing, analytics, CTA — *partly done*
 
-One landing page with consistent positioning. An explicit funnel: hero → what it is → cases → quick
-start → Telegram. Search Console and sitemap. The counter, with events on the CTAs.
+Done: the counter (`analytics/`) and its client, with events on the landing CTAs. It is inert until
+`ANALYTICS_ENDPOINT` is set, so nothing measures anything yet.
+
+**Blocked on actions only the owner can take**, both documented in `analytics/README.md`:
+
+1. **Connect Search Console.** The most valuable item on this whole page, and the most urgent, because
+   it does not backfill — it starts collecting the day it is connected. Every week without it is a
+   week of query data that cannot be recovered.
+2. Deploy the worker, then set the `ANALYTICS_ENDPOINT` repository variable.
+
+Still to do here: one landing page with consistent positioning and an explicit funnel — hero → what
+it is → cases → quick start → Telegram. The cases need re-framing from agency language ("helped the
+founder…", DAU counts) to framework proof, which needs facts only the owner has.
 
 ### Stage 3 — the competency map (the long work)
 
@@ -183,10 +194,16 @@ Enable the blog (already present, commented out in config). Sections: framework 
 engineering writing, case breakdowns. On top of it, a repeatable process turning one post into
 per-channel variants.
 
-### Stage 5 — the GEO layer
+### Stage 5 — the GEO layer — *partly done*
 
-`llms.txt`, structured data, per-page OG images, and the distribution work that makes the framework
-citable.
+Done, and brought forward from its place in this list because it was cheap and because content
+should ship into it rather than have it retrofitted: `llms.txt` and `llms-full.txt` (generated at
+prebuild from `docs/` and `education/`, so they cannot drift), `robots.txt` explicitly welcoming the
+AI crawlers, and `SoftwareApplication` JSON-LD.
+
+Still to do: per-page `TechArticle` structured data — which needs swizzling the doc page, unlike the
+site-wide tag already in `headTags` — per-page OG images, and the distribution work that makes the
+framework citable at all (pub.dev, GitHub, dev.to, r/FlutterDev).
 
 ---
 
