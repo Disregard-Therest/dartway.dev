@@ -85,7 +85,7 @@ my_app_flutter/lib/
   my_app_app.dart        all the wiring: DwAppRunner, MaterialApp.router, the root subscription
   app/                   the features — app/home/, app/profile/, app/admin/...
   auth/                  the sign-in flow
-  common/                cross-screen shells, e.g. app_scaffold.dart
+  shared/                building blocks features draw with, e.g. widgets/app_scaffold.dart
   core/                  app-wide infrastructure: router/, dw_core.dart, app_settings/, dev/
   ui_kit/                your design system, as source
   l10n/                  ARB files and their generated output
@@ -110,7 +110,8 @@ feature's internals — any other subfolder is read as a nested feature.
 
 Two rules follow, and the [conventions checker](../5-tooling/conventions-checker.md) enforces both:
 a feature has exactly one root file, and no feature may import another feature's `widgets/` or
-`logic/`. What two features share is one more feature, not a `shared/` folder. The entry point also
+`logic/`. Behaviour two features share is one more feature; a widget with no story of its own is a
+building block and lives in `lib/shared/`, where no spec is expected of it. The entry point also
 declares what it is, in a `DwFeatureSpec` next to its own code rather than in a document that drifts
 — see [features and specs](../3-flutter/features-and-specs.md).
 
@@ -135,6 +136,12 @@ nothing deeper.
 The boundary is enforced rather than remembered: raw `Color(...)`, `TextStyle(...)`, `BorderRadius`
 and direct `Theme.of(context)` access **outside** `ui_kit/` are a lint (`dartway_lints`, wired into
 `custom_lint`). A style that leaks into a feature is a style nobody can change centrally later.
+
+The same lint package draws one more line, this time about imports: a relative import may walk at
+most two levels up (`deep_relative_import`). One or two `../` read as "the feature next door";
+past that the path names nothing, and the destination — `core/`, `data/`, `domain/`, `shared/`,
+`ui_kit/`, another zone — is spelled out with a `package:` import instead. The limit doubles as a
+structure signal: a sibling four levels away is not a sibling.
 
 ## `.claude/` — generated, and committed
 

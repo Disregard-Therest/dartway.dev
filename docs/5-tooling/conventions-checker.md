@@ -63,6 +63,7 @@ commit over a 210-line file is a check people disable.
 | `invalidFeatureStructure` | error | A feature folder with more than one root file |
 | `forbiddenFeatureImport` | error | Reaching into another feature's `widgets/` or `logic/` |
 | `featureSpecMissing` | warning | A feature widget that declares no `DwFeatureSpec` |
+| `unusedFeatureFile` | warning | A file in `widgets/`/`logic/` that its own feature never mentions |
 | `barrelFile` | error | A file that only re-exports |
 | `widgetSizesItself` | error | `Expanded` or `SizedBox.expand` returned straight from `build` |
 | `assetPathMissing` | error | An `assets/...` string that names no file |
@@ -76,18 +77,38 @@ used to catch `context.textTheme` but not `Theme.of(context).textTheme.bodySmall
 ordinary Flutter and means exactly the same thing — a screen deciding how it looks.
 
 "More than one root file" is a structural claim, not a style one. A feature has exactly one public
-file; anything a sibling also needs belongs in a feature of its own, not in a `shared/` folder.
+file; behaviour a sibling also needs belongs in a feature of its own. A widget with no story of its
+own is not a feature at all — it is a building block, it lives in `lib/shared/`, and the checker
+never asks it for a spec.
 `featureSpecMissing` is checked only when the entry point is a widget — a feature whose entry
 point is an extension or a plain function has nothing to hang a spec on. The spec matters because
 error reports, Studio and the agent all read it: without one the feature exists in the code and
 says nothing about itself.
 
+**`unusedFeatureFile`** (warning) is the one check the analyzer structurally cannot replace. A public
+class is always "possibly used from somewhere else" — unless the somewhere else is a finite place,
+which Law 3 makes it: nobody outside a feature may import its `widgets/`/`logic/`, so a file in there
+that its own feature never mentions is unreachable. It compiles, it survives refactors, and it is
+found in one folder-deep pass.
+
+Two things it does *not* get wrong, because both cost real false positives before they were fixed: a
+type is not how it is called (an extension is reached by member name, a notifier through its provider
+variable, so every public name a file declares counts), and dead code keeps dead code alive (a
+handler nobody calls still calls its own settings, so the sweep repeats until a pass buries nobody).
+What it cannot see: a reference made through a string, and a file whose own halves only reference
+each other.
+
 Filter with `--type <name>` or `--level error|warning|info`, or narrow the run to a single folder
 with `--dir lib/app/booking`. Note that `--dir` skips the `ui_kit/` pass — the kit is checked as a
 whole or not at all.
 
-Scope: the feature-shaped areas `app*`, `auth*`, `common*`, `admin*`, plus `ui_kit/`. `core/`,
-`data/` and `domain/` hold infrastructure with a shape of its own. Generated files (`.g.dart`,
+Scope, and it is two scopes rather than one. The **feature-shaped** areas — `app*`, `auth*`,
+`common*`, `admin*` — must be built out of features and are asked for a `DwFeatureSpec`. The
+**checked** areas add `shared*` and `ui_kit/`: their content is read for the cleanliness and UI-Kit
+rules, but no spec is expected, because a building block has no product behaviour to describe.
+Keeping the two apart is what makes `lib/shared/` safe to recommend — before, a widget moved out of
+a zone left every check behind, not just the passport one. `core/`, `data/` and `domain/` hold
+infrastructure with a shape of its own and are skipped entirely. Generated files (`.g.dart`,
 `.gen.dart`, `.freezed.dart`) and the folders `generated/`, `gen/`, `l10n/`, `zarchive/` are
 nobody's code and are skipped everywhere.
 
