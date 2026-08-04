@@ -33,6 +33,25 @@ verifies the site still builds, commits only if it does, and then deploys.
 Hand-written content lives in `learn/` (the competency map), `src/pages/` (the landing) and
 `src/css/`.
 
+## The Russian site is generated too
+
+The site is bilingual: English at the root, Russian at `/ru`. Only the English is written. Everything
+under `i18n/ru/` is produced from it by `npm run translate` and, like `docs/`, **does not survive a
+hand edit**. Write the English, then run the translator in the same commit.
+
+```bash
+npm run translate              # only what changed since the last run
+npm run translate -- --check   # report what is stale, write nothing
+npm run translate -- --force   # everything
+```
+
+The engine is the `claude` CLI, so there is no API key to configure — but it costs tokens and takes
+minutes, which is why it is an operator command rather than a build step.
+
+The documentation has no Russian version on purpose: the docs plugin is off for every locale but the
+default, so `/ru/docs/*` does not exist and the Russian navbar links to the English pages. See
+[STRATEGY.md](STRATEGY.md).
+
 ## Deployment
 
 Pushing to `master` triggers [`deploy.yml`](.github/workflows/deploy.yml), which builds and

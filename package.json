@@ -17,6 +17,7 @@
     "sync-docs": "node scripts/sync-docs.mjs",
     "generate-llms": "node scripts/generate-llms.mjs",
     "check-links": "node scripts/check-links.mjs",
+    "translate": "node tools/translate.mjs",
     "stats": "node tools/stats.mjs",
     "worker:secret": "node tools/push-secret.mjs",
     "worker:deploy": "wrangler deploy --cwd analytics",

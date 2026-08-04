@@ -103,15 +103,40 @@ models learn the framework exists at all.
 
 Recorded so they are not silently re-litigated later.
 
-**English only.** The Russian locale is removed. Documentation originates in English in the
-monorepo, the framework's audience is international, and generative search works in English. The
-half-translated state the site was in — Russian navbar and learning pages, English docs silently
-falling back — was worse than either option.
+**English is the source language; Russian is generated from it.** Everything is written in English
+first — the landing, the competency map, the documentation in the monorepo — and the Russian site is
+produced from that source by `npm run translate`, never written by hand. Two hand-maintained branches
+of the same content is the cost this avoids, and it is the cost that killed the previous attempt.
 
-**Russian, if it ever returns, is a derived layer.** Not a Docusaurus locale: a separate URL prefix,
-generated from the English source and never hand-edited. Hand-editing it would create two branches of
-content to keep in sync, which is the cost we are avoiding. Deferred until `/learn` has enough pages
-for the question to matter — translating two articles is pointless. Revisit around twenty.
+Recorded 2026-08-04, replacing the "English only" decision made three days earlier. That decision set
+its own trigger — revisit when `/learn` is around twenty pages — and the map shipped at forty-nine.
+Two things changed with it:
+
+- **Distribution is Russian-speaking.** The map is a shareable artefact rather than a search-ranking
+  play (see stage 3 below), and it gets shared where we have reach. A Russian page also competes for
+  queries an English one cannot win: nothing short outranks a long English tutorial for "flutter
+  state management", while the Russian equivalent is close to open ground.
+- **The failure mode is now structural, not a matter of discipline.** What was wrong before was a
+  half-translated site — Russian navbar and learning pages over English docs that silently fell back
+  to the default locale. Falling back is what a Docusaurus locale does when a page is missing, so
+  the fix is to leave nothing missing.
+
+**Docs stay English, and `/ru/docs/*` does not exist.** Not "exists in English": the documentation
+plugin is switched off for every locale but the default, so the Russian build has no docs routes at
+all and the navbar links out to the English ones. That is what keeps the old failure from recurring —
+there is no page that can quietly serve English under a Russian URL, and no duplicate of the same
+text at two addresses for a search engine to pick between. `llms.txt` stays English for the same
+reason.
+
+The reasons docs are not translated are unchanged: they are generated from the monorepo and change
+daily, models read them in English, and a Russian copy lagging the API is worse than no Russian copy.
+
+**The mechanism is a real Docusaurus locale**, which the earlier decision ruled out. It was ruled out
+when only `/learn` was going to be translated and the rest would have fallen back; with the whole
+site translated and docs structurally absent, the locale is what makes the theme's own Russian
+strings, the `hreflang` tags and the `/ru` URLs work without being hand-built. The price is two
+places where the theme had to be overridden — the language switch and the alternate-language tags,
+both of which assume every page exists in every locale. Both are in `src/`, both are commented.
 
 **Docs sync from `master`, not `stable`.** `stable` is what `dartway create` actually hands users, so
 it is the more correct source in principle. But `stable` is not being promoted often enough right
@@ -140,6 +165,20 @@ holds up to".
 ---
 
 ## 6. Roadmap
+
+### Stage 6 — the Russian site — *shipped*
+
+The whole site except the documentation, at `/ru`: landing, competency map, navigation. Generated
+from the English source by `npm run translate` and committed, on the same terms as `docs/` — output,
+diffable, never hand-edited. See section 5 for why it came back and why the docs did not come with it.
+
+Each locale points at its own Telegram channel — `dartway_dev` and `dartway_dev_ru`. That is the one
+link on the site that is not a translation but a different destination, which is why it is configured
+per locale rather than sitting in a translation file.
+
+Still to do here: the landing copy is queued for a rewrite (stage 2), and the Russian version is a
+translation of the version that is about to be replaced. Re-run the translator after that rewrite —
+it will pick up exactly the strings that changed.
 
 ### Stage 0 — clear the ground ✅
 

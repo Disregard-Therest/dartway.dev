@@ -1,0 +1,18 @@
+{
+  "link.title.Community": {
+    "message": "Сообщество",
+    "description": "Community"
+  },
+  "link.item.label.Telegram": {
+    "message": "Telegram",
+    "description": "Telegram"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "GitHub"
+  },
+  "copyright": {
+    "message": "© 2026 DartWay. Сделано на Docusaurus.",
+    "description": "Copyright © 2026 DartWay. Built with Docusaurus."
+  }
+}

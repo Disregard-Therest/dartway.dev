@@ -1,0 +1,30 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "Next"
+  },
+  "sidebar.learnSidebar.category.Foundations": {
+    "message": "Основы",
+    "description": "Foundations"
+  },
+  "sidebar.learnSidebar.category.Dart": {
+    "message": "Dart",
+    "description": "Dart"
+  },
+  "sidebar.learnSidebar.category.Flutter": {
+    "message": "Flutter",
+    "description": "Flutter"
+  },
+  "sidebar.learnSidebar.category.Engineering Practices": {
+    "message": "Инженерные практики",
+    "description": "Engineering Practices"
+  },
+  "sidebar.learnSidebar.category.AI in Development": {
+    "message": "AI в разработке",
+    "description": "AI in Development"
+  },
+  "sidebar.learnSidebar.category.Product & Team": {
+    "message": "Продукт и команда",
+    "description": "Product & Team"
+  }
+}

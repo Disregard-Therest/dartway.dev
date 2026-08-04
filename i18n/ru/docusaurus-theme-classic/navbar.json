@@ -1,0 +1,14 @@
+{
+  "title": {
+    "message": "DartWay",
+    "description": "DartWay"
+  },
+  "logo.alt": {
+    "message": "Логотип DartWay",
+    "description": "DartWay Logo"
+  },
+  "item.label.Learn": {
+    "message": "Обучение",
+    "description": "Learn"
+  }
+}

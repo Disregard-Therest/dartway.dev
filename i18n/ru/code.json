@@ -1,0 +1,230 @@
+{
+  "navbar.documentation": {
+    "message": "Документация",
+    "description": "Documentation"
+  },
+  "landing.meta.description": {
+    "message": "DartWay — full-stack фреймворк для Flutter + Serverpod: строгая архитектура, меньше шаблонного кода, реальные продукты выходят быстрее.",
+    "description": "DartWay is a full-stack Flutter + Serverpod framework for shipping real products faster with stricter architecture and less boilerplate."
+  },
+  "landing.hero.title": {
+    "message": "Приложения за дни, а не месяцы",
+    "description": "Apps in days, not months"
+  },
+  "landing.hero.kicker": {
+    "message": "для команд на Flutter + Serverpod",
+    "description": "for Flutter + Serverpod teams"
+  },
+  "landing.hero.subtitle": {
+    "message": "Строгая архитектура, сгенерированная структура и готовые продуктовые примитивы: меньше шаблонного кода и меньше архитектурных ошибок.",
+    "description": "Strict architecture, generated structure, and ready product primitives so teams can build with less boilerplate and fewer architectural mistakes."
+  },
+  "landing.hero.meta.speed": {
+    "message": "Разработка в 3–5 раз быстрее",
+    "description": "3-5x faster delivery"
+  },
+  "landing.hero.meta.products": {
+    "message": "10+ выпущенных продуктов",
+    "description": "10+ shipped products"
+  },
+  "landing.cta.docs": {
+    "message": "Открыть документацию",
+    "description": "Open documentation"
+  },
+  "landing.stats.architecture.title": {
+    "message": "Строгая архитектура",
+    "description": "Strict architecture"
+  },
+  "landing.stats.architecture.text": {
+    "message": "UI, локальная логика, доменная логика и общие компоненты разделены по умолчанию.",
+    "description": "UI, local logic, domain logic, and shared components stay separated by default."
+  },
+  "landing.stats.core.title": {
+    "message": "Типизированное ядро продукта",
+    "description": "Typed product core"
+  },
+  "landing.stats.core.text": {
+    "message": "Модели, правила CRUD, фильтры и потоки данных заданы явно — и на фронтенде, и на бэкенде.",
+    "description": "Models, CRUD rules, filters, and data flows stay explicit across frontend and backend."
+  },
+  "landing.stats.ai.title": {
+    "message": "AI-friendly кодовая база",
+    "description": "AI-friendly codebase"
+  },
+  "landing.stats.ai.text": {
+    "message": "Единые паттерны делают генерацию, ревью и масштабирование гораздо предсказуемее.",
+    "description": "Consistent patterns make generation, review, and scaling much more predictable."
+  },
+  "landing.cases.title": {
+    "message": "Продукты на DartWay",
+    "description": "Products built with DartWay"
+  },
+  "landing.cases.footer": {
+    "message": "И ещё десятки выпущенных сценариев, внутренних инструментов и стартап-релизов на той же основе.",
+    "description": "And dozens of other shipped flows, internal tools, and startup releases built on the same foundation."
+  },
+  "landing.cases.tvaity.subtitle": {
+    "message": "Приложение по финансовой грамотности с регулярным контентом и чатами",
+    "description": "Financial literacy app with regular content and chats"
+  },
+  "landing.cases.tvaity.status": {
+    "message": "EdTech-платформа",
+    "description": "EdTech platform"
+  },
+  "landing.cases.fact.chats": {
+    "message": "Чаты",
+    "description": "Chats"
+  },
+  "landing.cases.fact.lms": {
+    "message": "LMS",
+    "description": "LMS"
+  },
+  "landing.cases.fact.analytics": {
+    "message": "Аналитика",
+    "description": "Analytics"
+  },
+  "landing.cases.fact.admin": {
+    "message": "Админка",
+    "description": "Admin panel"
+  },
+  "landing.cases.tvaity.result": {
+    "message": "Помогли онлайн-школе перенести работу из Telegram и LMS в собственное приложение и создать уникальный опыт обучения для студентов.",
+    "description": "Helped an online school move work from Telegram and LMS into its own application and create a unique learning experience for students."
+  },
+  "landing.cases.kerla.subtitle": {
+    "message": "Локальная доска объявлений с социальными механиками",
+    "description": "Region-specific classified with social elements"
+  },
+  "landing.cases.kerla.status": {
+    "message": "E-commerce стартап",
+    "description": "E-commerce startup"
+  },
+  "landing.cases.fact.listings": {
+    "message": "Объявления",
+    "description": "Listings"
+  },
+  "landing.cases.fact.chats2": {
+    "message": "Чаты",
+    "description": "Chats"
+  },
+  "landing.cases.fact.stories": {
+    "message": "Сторис",
+    "description": "Stories"
+  },
+  "landing.cases.fact.payments": {
+    "message": "Платежи",
+    "description": "Payments"
+  },
+  "landing.cases.kerla.metric": {
+    "message": "> 5000 пользователей",
+    "description": "> 5000 Users"
+  },
+  "landing.cases.kerla.result": {
+    "message": "Помогли основателю превратить идеи в продукт, запуститься на локальном рынке и продолжать расширять функциональность.",
+    "description": "Helped the founder turn ideas into product, launch on a local market, and keep expanding the feature set."
+  },
+  "landing.services.title": {
+    "message": "Что даёт фреймворк",
+    "description": "What the framework gives you"
+  },
+  "landing.services.structure.title": {
+    "message": "Структура по фичам",
+    "description": "Feature-first structure"
+  },
+  "landing.services.structure.text": {
+    "message": "Предсказуемая структура приложения: фичи, общий UI, локальное состояние и доменная логика.",
+    "description": "A predictable application layout for features, shared UI, local state, and domain logic."
+  },
+  "landing.services.pipeline.title": {
+    "message": "Единый поток данных",
+    "description": "Unified data pipeline"
+  },
+  "landing.services.pipeline.text": {
+    "message": "Модели на бэкенде, API, валидация, фильтры, хранение и списки в UI строятся вокруг одной модели.",
+    "description": "Backend models, API, validation, filters, persistence, and UI lists follow one model-driven flow."
+  },
+  "landing.services.primitives.title": {
+    "message": "Готовые продуктовые примитивы",
+    "description": "Ready product primitives"
+  },
+  "landing.services.primitives.text": {
+    "message": "Авторизация, роли, админские сценарии, конфиги CRUD, состояния загрузки, ошибки и real-time обновления уже внутри.",
+    "description": "Auth, roles, admin flows, CRUD configs, loading states, errors, and real-time updates are built in."
+  },
+  "landing.services.crossplatform.title": {
+    "message": "Кроссплатформенность",
+    "description": "Cross-platform delivery"
+  },
+  "landing.services.crossplatform.text": {
+    "message": "Один стек на Dart для iOS, Android, Web и рабочих панелей — без разъезжающейся архитектуры.",
+    "description": "One Dart stack for iOS, Android, Web, and operational panels without fragmented architecture."
+  },
+  "landing.proof.title": {
+    "message": "Почему команды переходят на DartWay",
+    "description": "Why teams switch to DartWay"
+  },
+  "landing.proof.glue": {
+    "message": "Убирает повторяющийся связующий код между моделями, правилами бэкенда, состоянием и UI.",
+    "description": "It removes repeated glue code between models, backend rules, state, and UI."
+  },
+  "landing.proof.patterns": {
+    "message": "Фиксирует базовые паттерны сразу, и продукт не расползается в несогласованную архитектуру.",
+    "description": "It fixes core patterns early, so products do not drift into inconsistent architecture later."
+  },
+  "landing.proof.ai": {
+    "message": "Задаёт AI и разработчикам одни и те же границы — генерация и ревью кода становятся безопаснее.",
+    "description": "It gives AI and engineers the same boundaries, which makes code generation and review safer."
+  },
+  "landing.proof.production": {
+    "message": "Проверен на продуктах в продакшене, а не только на демо-репозиториях.",
+    "description": "It is already validated in production products, not just demo repositories."
+  },
+  "landing.process.title": {
+    "message": "Как это внедряют",
+    "description": "How teams adopt it"
+  },
+  "landing.process.scaffold.title": {
+    "message": "Развернуть",
+    "description": "Scaffold"
+  },
+  "landing.process.scaffold.text": {
+    "message": "Начните с готовой full-stack основы DartWay, а не собирайте архитектуру с нуля.",
+    "description": "Start from a full-stack DartWay base instead of assembling architecture from scratch."
+  },
+  "landing.process.define.title": {
+    "message": "Описать",
+    "description": "Define"
+  },
+  "landing.process.define.text": {
+    "message": "Опишите модели и правила один раз — дальше фронтенд и бэкенд остаются согласованными через одну систему.",
+    "description": "Describe models and rules once, then keep frontend and backend aligned through the same system."
+  },
+  "landing.process.build.title": {
+    "message": "Собрать",
+    "description": "Build"
+  },
+  "landing.process.build.text": {
+    "message": "Выпускайте фичи на общих паттернах, типизированных API, реактивных экранах и переиспользуемых модулях.",
+    "description": "Ship features through shared patterns, typed APIs, reactive views, and reusable product modules."
+  },
+  "landing.process.scale.title": {
+    "message": "Масштабировать",
+    "description": "Scale"
+  },
+  "landing.process.scale.text": {
+    "message": "Растите продукт, не переписывая основу каждый раз, когда расширяется объём задач.",
+    "description": "Grow the product without rewriting the foundation every time the scope expands."
+  },
+  "landing.final.title": {
+    "message": "Хотите присмотреться к DartWay для следующего продукта?",
+    "description": "Want to evaluate DartWay for your next product?"
+  },
+  "landing.final.text": {
+    "message": "Начните с документации, посмотрите на архитектуру и напишите нам, если хотите обсудить внедрение или реальный продуктовый кейс.",
+    "description": "Start with the docs, inspect the architecture, and reach out if you want to discuss adoption or a real product use case."
+  },
+  "landing.cta.telegram": {
+    "message": "Вступить в Telegram",
+    "description": "Join Telegram"
+  }
+}

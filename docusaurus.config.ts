@@ -4,6 +4,26 @@ import { themes as prismThemes } from 'prism-react-renderer';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
+// Which locale is being built right now.
+//
+// `docusaurus build` builds every locale in turn, re-evaluating this file for
+// each one, and sets DOCUSAURUS_CURRENT_LOCALE before it does. Docusaurus marks
+// the variable as a stopgap in its own source (core/lib/commands/build/
+// buildLocale.js) and may replace it once a real API exists — so if a version
+// bump ever makes the Russian build sprout a /ru/docs/ tree, this is the line
+// that stopped working.
+const currentLocale = process.env.DOCUSAURUS_CURRENT_LOCALE ?? 'en';
+const isDefaultLocale = currentLocale === 'en';
+
+/**
+ * The community channel, per locale. Two real channels, not one channel with a
+ * translated label — so this is the one link on the site that must not simply
+ * be translated, and the reason it lives here rather than in the component that
+ * uses it: the footer is configured here and the landing reads it back out of
+ * `customFields`, and both have to agree.
+ */
+const TELEGRAM_URL = isDefaultLocale ? 'https://t.me/dartway_dev' : 'https://t.me/dartway_dev_ru';
+
 const config: Config = {
   title: 'DartWay Framework',
   tagline: 'Full-stack Dart framework on Flutter + Serverpod',
@@ -44,6 +64,9 @@ const config: Config = {
     // Base URL of the counter in analytics/. Unset means the client module does
     // nothing at all, which is the correct state until the worker is deployed.
     analyticsEndpoint: process.env.ANALYTICS_ENDPOINT ?? '',
+
+    // Read by the landing's closing CTA. See TELEGRAM_URL above.
+    telegramUrl: TELEGRAM_URL,
   },
 
   // Machine-readable statement of what DartWay is, on every page. Search engines
@@ -72,20 +95,29 @@ const config: Config = {
     },
   ],
 
-  // English only — see STRATEGY.md. If Russian ever returns it is a derived
-  // layer on its own URL prefix, not a Docusaurus locale.
+  // English is the source language and the default locale: it sits at the root,
+  // Russian at /ru. Everything under i18n/ru is either generated from the
+  // English source (learn) or a translation file checked by
+  // `npm run write-translations` (landing, navbar, footer) — see CLAUDE.md.
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'ru'],
+    localeConfigs: {
+      en: { label: 'English', htmlLang: 'en' },
+      ru: { label: 'Русский', htmlLang: 'ru' },
+    },
   },
 
   presets: [
     [
       'classic',
       {
-        docs: {
-          sidebarPath: './sidebars.ts',
-        },
+        // The framework documentation is English-only and generated from the
+        // monorepo — see STRATEGY.md. Switching the plugin off for every locale
+        // but the default is what keeps /ru/docs/* from existing at all, rather
+        // than existing and serving English under a Russian URL. The rule is
+        // restated for the runtime in src/localeRoutes.ts.
+        docs: isDefaultLocale ? { sidebarPath: './sidebars.ts' } : false,
         // preset-classic enables the blog unless told otherwise, and since 3.10
         // it publishes an empty /blog even with no posts. Off until stage 4
         // turns it on deliberately — an empty page is not something to leave
@@ -127,15 +159,21 @@ const config: Config = {
         src: 'img/dartway_logo.svg',
       },
       items: [
+        // Neither of the custom items is decoration: the theme's own navbar
+        // link and locale dropdown both assume every page exists in every
+        // locale, and the documentation does not. See src/components/.
         {
-          to: '/docs/getting-started/what-is-dartway',
+          type: 'custom-docsLink',
           position: 'right',
-          label: 'Documentation',
         },
         {
           to: '/learn',
           position: 'right',
           label: 'Learn',
+        },
+        {
+          type: 'custom-localeSwitch',
+          position: 'right',
         },
       ],
     },
@@ -152,7 +190,10 @@ const config: Config = {
         {
           title: 'Community',
           items: [
-            { label: 'Telegram (ENG)', href: 'https://t.me/dartway_dev' },
+            // Was "Telegram (ENG)" when the English channel was the only one.
+            // Now each locale points at its own, so the qualifier would only be
+            // wrong on one of them.
+            { label: 'Telegram', href: TELEGRAM_URL },
             { label: 'GitHub', href: 'https://github.com/dartway/dartway' },
           ],
         },

@@ -3,7 +3,7 @@
 The working list for dartway.dev. Why any of it matters is in [STRATEGY.md](STRATEGY.md);
 this file is only what is open, what is done, and who is blocking what.
 
-Updated 2026-08-01.
+Updated 2026-08-04.
 
 ---
 
@@ -25,7 +25,9 @@ Nothing here can be done from inside the repository.
 
 - [ ] **Landing: re-frame the cases.** TVAITY and Kerla are written in agency language ("helped the
       founder…", DAU counts). For a framework the framing should be what was built on it and what it
-      holds up to. Needs facts only the owner has.
+      holds up to. Needs facts only the owner has. **Re-run `npm run translate` afterwards** — the
+      Russian landing is a translation of the copy this task replaces, and the translator will pick
+      up exactly the strings that changed.
 - [ ] **Landing: make the funnel explicit** — hero → what it is → cases → quick start → Telegram.
 - [ ] **Deepen the competency map.** The first version is shipped — six areas, 48 topics. Next:
       revisit the AI area as the field moves, and consider whether any topic deserves a second page.
@@ -36,6 +38,12 @@ Nothing here can be done from inside the repository.
 
 ## Later
 
+- [ ] **`npm run translate -- --check` in CI.** The docs sync already runs on a schedule and fails
+      loudly; the translator has the same `--check` mode and nothing calls it. Without that, an
+      English page edited without re-translating just serves English at `/ru` and nobody finds out.
+- [ ] **Submit the `/ru` URLs to Search Console** once there is a sitemap entry for them, and watch
+      whether Russian impressions arrive faster than English ones. That was the argument for doing
+      this at all, and it is checkable.
 - [ ] **Search over the docs.** 21 pages is past the point where browsing is comfortable. Either
       Algolia DocSearch (free, but an application and a wait) or a local search plugin (works today,
       no external dependency).
@@ -85,3 +93,11 @@ Nothing here can be done from inside the repository.
 - [x] `tools/` — `npm run stats`, `worker:secret`, `worker:deploy`, `token:new`. Endpoint and token
       come from a git-ignored `.env`, so no command in the runbook carries a placeholder.
 - [x] The counter is live and counting.
+- [x] **The Russian site.** Everything but the documentation, at `/ru`: landing, competency map,
+      navigation. `i18n/ru/` is generated from the English source by `npm run translate` and
+      committed, on the same terms as `docs/`. The docs plugin is off for non-default locales, so
+      `/ru/docs/*` does not exist rather than serving English under a Russian URL — which is the
+      half-translated state that got the locale removed in the first place. Two theme overrides pay
+      for that: the navbar language switch and the `hreflang` tags, both of which assume every page
+      exists in every locale. Each locale links its own Telegram channel — `dartway_dev` and
+      `dartway_dev_ru`.

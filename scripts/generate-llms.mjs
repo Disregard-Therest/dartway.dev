@@ -33,6 +33,12 @@ const SITE_SUMMARY =
  *
  * `stripNumericPrefix` mirrors what Docusaurus does to path segments: `1-core`
  * is ordering metadata, not part of the URL.
+ *
+ * English only, deliberately. i18n/ru holds a translation of learn/ and adding
+ * it here would put the same pages in the file twice, in two languages, for no
+ * gain: a model asking what DartWay is does not need the Russian phrasing of a
+ * page it already has in English. Generative search runs on the English text —
+ * see STRATEGY.md.
  */
 const SOURCES = [
   {

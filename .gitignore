@@ -10,6 +10,12 @@
 /static/llms.txt
 /static/llms-full.txt
 
+# The English string baseline, extracted by tools/translate.mjs and deleted
+# again in the same run. Ignored so a crashed run cannot leave one behind:
+# Docusaurus would use it to render the English site from a stale snapshot.
+# Note that i18n/ru is generated too, but committed — see CLAUDE.md.
+/i18n/en
+
 # Secrets. .env holds STATS_TOKEN — see .env.example for what belongs there.
 # Keep this pattern broad: a secret committed once stays in the history.
 .env
