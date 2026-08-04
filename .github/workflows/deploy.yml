@@ -43,6 +43,13 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # Fails when an English page or interface string was changed without
+      # running `npm run translate`, which would otherwise deploy a Russian URL
+      # serving English text — silently, and for as long as nobody looked.
+      # Hash comparison only: no Claude CLI, no network, no tokens.
+      - name: Check the Russian translation is current
+        run: npm run translate -- --check
+
       - name: Build Docusaurus
         run: npm run build
         env:

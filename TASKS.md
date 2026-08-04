@@ -12,8 +12,13 @@ Updated 2026-08-04.
 Nothing here can be done from inside the repository.
 
 - [x] **Connect Google Search Console.** Done 2026-08-01.
-- [ ] **Submit the sitemap** — `sitemap.xml` in the Sitemaps section of Search Console. The live
-      sitemap now lists the new structure, 25 URLs.
+- [x] **Submit the sitemap** — `sitemap.xml`, done. It does not need re-submitting when the site
+      changes: the URL is stable and Google re-fetches it. It now lists 71 English pages.
+- [ ] **Submit `/ru/sitemap.xml`** — a *second* sitemap, 50 Russian URLs. Docusaurus writes one per
+      locale and generates no index, so the Russian pages are in a file the existing submission does
+      not cover and never will. `robots.txt` now lists both, which is enough for discovery; the
+      submission is what gives per-sitemap coverage figures, and comparing those two numbers is the
+      measurement the Russian site was built for.
 - [x] **Deploy the page counter.** Done 2026-08-01. Live at
       `dartway-analytics.dartway.workers.dev`, verified end to end: event recorded, stats read back,
       and the endpoint present in the published bundle. Read it with `npm run stats`.
@@ -38,12 +43,6 @@ Nothing here can be done from inside the repository.
 
 ## Later
 
-- [ ] **`npm run translate -- --check` in CI.** The docs sync already runs on a schedule and fails
-      loudly; the translator has the same `--check` mode and nothing calls it. Without that, an
-      English page edited without re-translating just serves English at `/ru` and nobody finds out.
-- [ ] **Submit the `/ru` URLs to Search Console** once there is a sitemap entry for them, and watch
-      whether Russian impressions arrive faster than English ones. That was the argument for doing
-      this at all, and it is checkable.
 - [ ] **Search over the docs.** 21 pages is past the point where browsing is comfortable. Either
       Algolia DocSearch (free, but an application and a wait) or a local search plugin (works today,
       no external dependency).
@@ -101,3 +100,7 @@ Nothing here can be done from inside the repository.
       for that: the navbar language switch and the `hreflang` tags, both of which assume every page
       exists in every locale. Each locale links its own Telegram channel — `dartway_dev` and
       `dartway_dev_ru`.
+- [x] **`npm run translate -- --check` in the deploy workflow.** An English page edited without
+      re-translating now fails the deploy instead of quietly serving English at a Russian URL. It
+      compares hashes only — no Claude CLI, no network, no tokens — so it costs the build a few
+      seconds. Both paths verified: exit 0 when current, exit 1 with the file list when not.

@@ -35,4 +35,9 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
+# Docusaurus writes one sitemap per locale and does not generate an index, so
+# the Russian pages are in a second file that nothing would otherwise point at.
+# Both are listed here so a crawler finds them without being told; the Search
+# Console submission is separate and is what gives per-sitemap coverage figures.
 Sitemap: https://dartway.dev/sitemap.xml
+Sitemap: https://dartway.dev/ru/sitemap.xml

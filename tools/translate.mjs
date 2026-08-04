@@ -16,7 +16,12 @@
  * The engine is the Claude CLI in headless mode, so there is no API key to set
  * up and no second bill: whoever can run `claude` can run this. That also makes
  * it an operator tool rather than a CI step — the output is committed and
- * reviewed like any other generated tree, and CI only checks it is current.
+ * reviewed like any other generated tree.
+ *
+ * `--check` is the exception and is what CI runs: it compares hashes and needs
+ * no CLI, no network and no tokens. It fails the deploy when an English page
+ * was edited without re-translating, which otherwise shows up as a Russian URL
+ * quietly serving English.
  */
 
 import { execSync, spawn } from 'node:child_process';
@@ -110,8 +115,6 @@ async function main() {
 
   if (onlyAt !== -1 && !only) fail('--only needs a path prefix');
 
-  requireClaude();
-
   const english = extractEnglishStrings();
   const manifest = force ? {} : readManifest();
 
@@ -133,6 +136,11 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+
+  // Checked here rather than at the top of the run: --check is the mode CI uses
+  // to catch an English edit that was never translated, and CI has no reason to
+  // install the CLI to answer a question about file hashes.
+  requireClaude();
 
   console.log(`Translating ${stale.length} of ${jobs.length} sources with ${MODEL}\n`);
 
