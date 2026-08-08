@@ -18,6 +18,32 @@ Three examples of what nothing else catches:
 The checker is not a second analyzer. It exists because DartWay's structural conventions are the
 part of the framework that a compiler has no opinion about.
 
+## Three commands, and none of them implies the others
+
+A DartWay project has three separate gates, and each has to be run by name:
+
+```bash
+flutter analyze            # the analyzer and the lint set
+dart run custom_lint       # DartWay's own rules
+dartway check              # the structural conventions
+```
+
+**`flutter analyze` does not execute `custom_lint` plugins.** This trips everyone once: `dartway_lints`
+is declared in `pubspec.yaml`, `custom_lint` is listed under `analyzer: plugins:`, the IDE underlines
+violations — and a CI running only `flutter analyze` reports a clean build while enforcing none of it.
+A real project shipped that way for months; the code turned out to be clean, but nothing had been
+guarding it.
+
+**A project's CI runs all three, plus its tests.** Not because CI is a virtue, but because these are
+the checks the project has already declared: a rule configured and not executed is worse than a rule
+absent, since it reads as covered. Two consequences worth stating outright:
+
+- **if a package has a `test/` folder, CI runs it.** A suite excluded from CI stops compiling, and
+  nobody learns that from the exclusion comment. One project's server tests — including the suite
+  proving one tenant cannot read another's data — had never run; the first CI run that saw them
+  found a test that only passed on the author's operating system;
+- **"it does not compile against the new API" is a red CI, not a note in a workflow file.**
+
 ## What the report looks like
 
 The report is organised **per feature**, not as a flat list of lines. A large project should read
@@ -64,6 +90,7 @@ commit over a 210-line file is a check people disable.
 | `invalidFeatureStructure` | error | A feature folder with more than one root file |
 | `forbiddenFeatureImport` | error | Reaching into another feature's `widgets/` or `logic/` |
 | `featureSpecMissing` | warning | A feature widget that declares no `DwFeatureSpec` |
+| `notAFeature` | error | A folder in a zone whose entry point declares no widget |
 | `unusedFeatureFile` | warning | A file in `widgets/`/`logic/` that its own feature never mentions |
 | `barrelFile` | error | A file that only re-exports |
 | `widgetSizesItself` | error | `Expanded` or `SizedBox.expand` returned straight from `build` |
@@ -81,10 +108,23 @@ ordinary Flutter and means exactly the same thing — a screen deciding how it l
 file; behaviour a sibling also needs belongs in a feature of its own. A widget with no story of its
 own is not a feature at all — it is a building block, it lives in `lib/shared/`, and the checker
 never asks it for a spec.
-`featureSpecMissing` is checked only when the entry point is a widget — a feature whose entry
-point is an extension or a plain function has nothing to hang a spec on. The spec matters because
-error reports, Studio and the agent all read it: without one the feature exists in the code and
-says nothing about itself.
+**`notAFeature` and `featureSpecMissing` are one rule read from both ends**, and neither works
+alone. A zone holds features: a folder in one whose entry point declares no widget is not a feature
+at all (`notAFeature`), and one that does declare a widget owes a passport (`featureSpecMissing`).
+While only the second existed, a provider-only folder passed *because* it was not a widget — a real
+project accumulated ten of them, every one graded A.
+
+Where they go instead: state that several features watch is wiring, so `lib/core/`; a helper with no
+story of its own is a building block, so `lib/shared/`.
+
+The widget test asks whether a **public class extends anything named `*Widget`**, not whether it
+matches a list of base classes. The list used to be
+`(Stateless|Stateful|Consumer|HookConsumer|Hook)Widget` and silently missed `ConsumerStatefulWidget`
+— what every form and dialog extends, which is to say the features with the most behaviour to
+describe. A list of remembered names goes stale in silence; a shape does not.
+
+The spec matters because error reports, Studio and the agent all read it: without one the feature
+exists in the code and says nothing about itself.
 
 **`unusedFeatureFile`** (warning) is the one check the analyzer structurally cannot replace. A public
 class is always "possibly used from somewhere else" — unless the somewhere else is a finite place,
