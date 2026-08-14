@@ -34,6 +34,11 @@ The open `dartway_studio_bridge` package is the only integration surface:
   passes its `validateAccessToken`. A token taken off the wire is therefore
   useless anywhere else, and it expires on its own.
 
+  The gate is on **everything**, not on the manifest alone: until a token has
+  been accepted the app runs no command it is sent and reports nothing back, so
+  a page that embedded the build without presenting anything can neither drive
+  it nor read its feature passports.
+
   Your build holds no secret and copies nothing out of Studio: the public half
   of the pair ships inside the bridge package, and a public key can only check
   signatures, never make them. The build names one thing — where it answers:
@@ -67,3 +72,23 @@ The open `dartway_studio_bridge` package is the only integration surface:
 See the package [README](https://github.com/dartway/dartway/blob/master/packages/dartway_studio_bridge/README.md) for the
 full API, and `example/dartway_example_flutter/lib/core/studio/` for the reference
 integration (manifest, sign-in executor, binding widget).
+
+## Apps that are not Flutter
+
+Studio previews a web build in an iframe, and nothing in the protocol is
+Flutter-specific — so an app written in React or Vue connects to the same
+Studio, unmodified. The app half of the bridge exists a second time as
+`js/studio-bridge` (`@dartway/studio-bridge` on npm): one core plus two thin
+bindings (`/react`, `/vue`), speaking the same protocol version, checking the
+same signature against the same shipped public key.
+
+One thing differs, and not on the wire: a JS app **can** enumerate its features,
+because a declaration is a component and components are what a framework already
+tracks — where a Flutter app reports what is mounted, a React or Vue app
+declares `<StudioFeature>` and the registry does the rest.
+
+The two implementations are kept honest by golden wire strings in the JS
+package's tests: the Dart encoder's exact output, key order included. Change the
+protocol on one side and those tests fail — which is the point, since the two
+packages version independently and a pilot team's preview is a poor place to
+discover a rename.
