@@ -42,22 +42,28 @@ the part you write. What each folder is for: [project layout](project-layout.md)
 
 ## 2. Run it
 
-In VS Code this is three launch configurations: **Server**, then **Seed dev data**, then
-**Flutter (web)**. With an assistant it is one sentence — [start with an agent](start-with-an-agent.md).
+In VS Code this is two launch configurations: **Server**, then **Flutter (web)**. With an assistant
+it is one sentence — [start with an agent](start-with-an-agent.md).
 
-By hand it is five commands, and the order matters:
+By hand it is four commands, and the order matters:
 
 ```bash
 cd my_app/my_app_server
 dart pub get
 docker compose up -d                                       # Postgres on 8090 (+ a test DB, MinIO)
 dart bin/main.dart --apply-migrations --role maintenance    # apply the schema, then exit
-dart bin/seed_dev.dart --mode development                   # one user per role
 dart bin/main.dart                                          # run the server — this one stays up
 ```
 
 `--role maintenance` is what makes the migration step *finish*. Without it `--apply-migrations`
-applies the schema and then keeps serving, and the terminal never comes back for the seed.
+applies the schema and then keeps serving, and the terminal never comes back.
+
+Before that last line, open `config/passwords.yaml` and put your own phone number in
+`bootstrapAdminIdentifier`, under `development`. That is how the project gets its **first
+administrator**: the admin role is granted by an admin, so the first one has to be declared
+somewhere, and it is declared per environment rather than shipped as a default — whoever can
+receive the one-time code on that identifier becomes the admin. The key is empty in a new project;
+the server starts either way and prints on boot what it did, or that the key is unset.
 
 In another terminal:
 
@@ -71,13 +77,15 @@ flutter run
 > carries a LAN address for that case — set it to your machine's IP. Web, desktop and the iOS
 > simulator need no change.
 
-The seed prints two phone numbers. Sign in as the plain user, `79990000003`; the admin is
-`79990000001`. The one-time code is printed to the server console — in development nothing is sent
-over SMS.
+The database starts empty — there is nobody to sign in as until you register. Do that from the app
+with the identifier you put in `bootstrapAdminIdentifier`: the one-time code is printed to the
+server console, because in development nothing is sent over SMS. That account is the admin.
 
-The home screen reads the app name from the database through the generic CRUD. Open the admin panel
-as `79990000001`, change it, and watch the home screen update **without a reload**. That is the
-whole path — Postgres → CRUD config → typed live list → widget — proving itself on the first screen.
+The home screen reads the app name from the database through the generic CRUD, and no app name is
+set yet — an empty setting is a legitimate state, not a missing seed. Open the admin panel, fill it
+in on the settings screen, and watch the home screen update **without a reload**. That is the whole
+path — Postgres → CRUD config → typed live list → widget — proving itself on the first screen, and
+the write end of it as well.
 
 ## 3. Declare a model
 
@@ -101,11 +109,19 @@ Generate the code and the migration:
 cd my_app/my_app_server
 serverpod generate
 serverpod create-migration
+dart format lib/src/generated ../my_app_client/lib/src/protocol
 dart bin/main.dart --apply-migrations --role maintenance
 ```
 
 `serverpod generate` writes Dart into `lib/src/generated/` **and** into `my_app_client`. Neither is
 edited by hand.
+
+The `dart format` line belongs to the sequence, in that position. The generator formats its output
+with its own bundled `dart_style`, which is not the `dart format` of your SDK, so without it every
+generation rewrites files your change never touched — one nullable field can arrive as a 1900-line
+diff. And it comes *after* `create-migration`, because that command regenerates to diff the schema
+and would throw the formatting away. Both paths together, every time; the details are in
+[models.md](../2-core/models.md#the-workflow-and-where-it-usually-goes-wrong).
 
 ## 4. Configure CRUD — instead of writing endpoints
 

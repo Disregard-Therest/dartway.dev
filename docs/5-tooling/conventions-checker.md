@@ -108,6 +108,7 @@ commit over a 210-line file is a check people disable.
 | `uiKitPartMissing` | error | A kit file without `part of '../ui_kit.dart'` |
 | `uiKitContainsText` | warning | A text constant in the kit; texts belong to features and l10n |
 | `invalidTopLevelLayout` | error | A folder or file the declared top level does not name, or a fixed name that is missing |
+| `frameworkRefsDiverged` | warning | The project's `dartway_*` git dependencies are locked to more than one commit |
 | `invalidFeatureStructure` | error | A feature folder with more than one root file |
 | `forbiddenFeatureImport` | error | Reaching into another feature's `widgets/` or `logic/` |
 | `featureSpecMissing` | warning | A feature widget that declares no `DwFeatureSpec` |
@@ -119,6 +120,7 @@ commit over a 210-line file is a check people disable.
 | `forbiddenAssetPath` | warning | A raw `assets/...` path outside `ui_kit/` |
 | `fileLong` | info | Over 200 lines |
 | `fileTooLong` | warning | Over 350 lines |
+| `generatedCodeUnformatted` | warning | The server's `lib/src/generated/` or the client's `lib/src/protocol/` differs from `dart format` |
 
 "Raw styles" means `Color(`, `TextStyle(`, `BorderRadius`, `Theme.of(context)`, `context.theme`,
 `context.textTheme`, `context.colorScheme`. The long spelling is in the list on purpose: the rule
@@ -160,9 +162,26 @@ handler nobody calls still calls its own settings, so the sweep repeats until a 
 What it cannot see: a reference made through a string, and a file whose own halves only reference
 each other.
 
+**`frameworkRefsDiverged`** (warning) is the one check that reads no Dart at all. A project that
+consumes DartWay by git writes `ref: master` on every framework package, which reads as "all of it
+from master" and is not what the lock does: a git dependency is pinned to a commit the moment it is
+*added*, and stays there until something upgrades it by name. Add the core in March and the push
+module in May and the app runs two framework releases against each other — and a git dependency
+carries no version number, so nothing in the project says so. The check groups the `dartway_*` git
+entries of every `pubspec.lock` under the project root by repository, and reports a repository that
+came out on more than one commit, naming the packages, the commits and the directories to run
+`dart pub upgrade` in. Different repositories are never compared, and hosted packages are left out
+because semver already answers the question for them.
+
+It is a warning because the state is wrong while the code is not, and because what fixes it is a
+command rather than an edit. The related trap on the framework side — a `dependency_overrides` block
+switching off constraint checking for the packages it names — is described in
+[what `create` changes](../1-getting-started/project-layout.md#what-create-changes-on-the-way-in).
+
 Filter with `--type <name>` or `--level error|warning|info`, or narrow the run to a single folder
 with `--dir lib/app/booking`. Note that `--dir` skips the `ui_kit/` pass — the kit is checked as a
-whole or not at all.
+whole or not at all, and for the same reason it skips the layout, generated-format and
+framework-lock passes, which judge the project rather than any one folder.
 
 Scope, and it is two scopes rather than one. The **feature-shaped** areas are the four zones —
 `app/`, `admin/`, `auth/`, `common/` — which must be built out of features and are asked for a
@@ -182,6 +201,38 @@ the check exists at all — `app/admin/` is a perfectly ordinary group as far as
 concerned, which is how the admin panel spent a release outside the checks that were written for
 it. The pass covers the server package too (`lib/src/`), and `--dir` skips it, the same way it
 skips `ui_kit/`.
+
+## Why `generatedCodeUnformatted` is a warning that names a command
+
+Two programs write the generated code and they disagree about how it should look. `serverpod
+generate` formats its output with the `dart_style` bundled with the Serverpod CLI; the code already
+in the repository was formatted by the `dart format` of the project's SDK. Nothing reconciles them,
+so the difference shows up as a generation run that rewrites files the change never went near.
+Making one field nullable is two lines of schema and, without a format pass, a diff of 29 files and
+about 1900 lines — on review that reads as a rewritten protocol, and the two lines that matter
+cannot be found inside it.
+
+The fix is a `dart format` over both generated trees, and it has to be the **last** of the three
+steps: `create-migration` regenerates in order to diff the schema, so a pass placed between it and
+`generate` is silently thrown away. That is what turns a forgotten step into a loop — generate,
+format, generate, format again — and it is why the sequence is written down as a sequence in
+[models.md](../2-core/models.md#the-workflow-and-where-it-usually-goes-wrong).
+
+The check insists on both trees, including the one that came back clean. Formatting only the half
+you were looking at does not avoid the diff; it defers it to whoever next runs `dart format`
+honestly. One project kept its server tree formatted and left the client raw, and the next person to
+format both added 33 unrelated files to an unrelated pull request.
+
+**Warning, not error, and deliberately.** This is the one check whose verdict depends on the tool
+running it: the comparison is against the `dart_style` of the SDK in use, so a red result can mean
+"your SDK is newer than the one that formatted this" rather than "you skipped a step". Failing a
+build on that would be the fastest way to teach a team to filter this check out — the same argument
+as `SizedBox(width: double.infinity)` below, arrived at from the other direction. What earns the
+check its place instead is the message: it names the files, the exact command with both paths
+written out, and the Dart version it judged against, so that someone who did not write the code and
+does not know why it went red can still fix it or recognise the version skew.
+
+Like the layout pass, it judges the server and client packages, so `--dir` skips it.
 
 ## Why 200 and 350
 

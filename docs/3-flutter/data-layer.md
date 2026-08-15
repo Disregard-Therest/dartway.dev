@@ -88,6 +88,14 @@ getters over `requireUserProfileProvider`, because Dart has no generic getters a
 cannot name your model in an extension on `Ref`. They are shorthand, not the source: delete the file
 and the providers still work.
 
+When the id is all you need — a filter, a channel key, an ownership check — there is a third provider
+beside them, and no reason to pull the whole profile out to reach `.id`:
+
+```dart
+// int? — null while signed out, and null in an app running without a DartWay session
+ref.watch(dw.signedInUserIdProvider)
+```
+
 ## Rendering a list
 
 An `AsyncValue` has three branches, and writing `when(loading:, error:, data:)` in every feature is
@@ -139,9 +147,14 @@ speak. So:
   model of type X` while building the skeleton — during `build`, so it is a red screen, not an
   error state.
 
-`dwBuildListAsync` asserts up front that a placeholder is obtainable, but the assert only checks
-that `DwConfig.defaultModelGetter` is wired at all (the app passes `dwGetDefault`), not that your
+`dwBuildListAsync` asserts that a placeholder is obtainable, but the assert only checks that
+`DwConfig.defaultModelGetter` is wired at all (the app passes `dwGetDefault`), not that your
 particular model is registered. A new model means a new `setupRepository` call, always.
+
+Both the assert and the placeholder itself belong to the loading branch and run nowhere else — a
+widget test that hands the builder a ready `AsyncData` never touches the registry, and so does not
+have to stand it up. A list test that *does* fail on a missing placeholder is a test of the loading
+state, whether or not it was written as one.
 
 ## Narrowing the list: `backendFilter`
 
@@ -218,6 +231,46 @@ final workspaceStateProvider =
 (`scoped_providers_should_specify_dependencies`) which cannot help you here: it only reasons about
 providers written with code generation, and DartWay writes them by hand.
 
+## State that is not server data
+
+"How this list is sorted", "is this panel collapsed", "which tab was open" is state too, and it never
+goes near `dw.repo`. Two questions place it, in this order.
+
+**Does it survive a restart?** No — an ordinary `Notifier`, in memory like anything else. Yes — the
+[`dartway_shared_preferences`](plugins.md) plugin, `dw.plugins.prefs`. It hands back a riverpod
+provider, so persisting a value costs no reactivity: the same `ref.watch`, and every reader on the
+screen sees one value.
+
+**Does it belong to an entity?** No, it is one setting for the whole app — a constant key:
+
+```dart
+final darkModeProvider =
+    dw.plugins.prefs.provider<bool>(key: 'darkMode', defaultValue: false);
+```
+
+Yes, there is one per project, per chat, per section — the family form, where `keyFor` builds the key
+from the argument:
+
+```dart
+final projectSortProvider = dw.plugins.prefs.providerFamily<String, int>(
+  keyFor: (projectId) => 'project.$projectId.sort',
+  defaultValue: 'name',
+);
+
+final sort = ref.watch(projectSortProvider(project.id));
+ref.read(projectSortProvider(project.id).notifier).update('createdAt');
+```
+
+The family is what makes this safe, not just short. `provider` takes a constant key and must be
+declared once, like any riverpod provider: call it per id and each call builds a *new* provider, so
+two of them over one key never see each other's writes. A family is declared once and riverpod keeps
+one provider per argument value, which is exactly the guarantee the loop cannot give.
+
+`mappedProvider`/`mappedProviderFamily` are the same pair for enums and custom types, stored as a
+`String`. `dw.plugins.prefs.raw` is the underlying store, for a genuine one-off imperative read — a
+store class of your own built on it has no subscribers, and the state ends up trapped in one widget's
+`State`.
+
 ## Writing
 
 ```dart
@@ -230,6 +283,12 @@ updated, and the server's `saveConfig` is the single place both are configured. 
 persisted model, so post-processing (computed fields, timestamps) comes back to you. `deleteModel`
 returns `true` when nothing is left on the server; a model that was never persisted returns `true`
 without a round trip.
+
+The `copyWith` above is not a style choice. Rebuilding an existing row by naming its fields —
+`SessionBooking(id: booking.id, …)` — is how a field added later gets silently reset to its default
+on every save, and `model_rebuild_by_constructor` (`dartway_lints`) warns about it. The reasoning,
+and why clearing a nullable field is `copyWith`'s job too, is in
+[models](../2-core/models.md#an-existing-row-is-rebuilt-with-copywith-never-field-by-field).
 
 Both dispatch the server's `updatedModels` into every open watcher of that type, which is why a
 booking cancelled from a card updates the list behind it with no refresh code anywhere. That
