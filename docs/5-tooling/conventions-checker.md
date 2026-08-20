@@ -33,9 +33,16 @@ is decidable without understanding what the code means**.
 The third row is the one worth defending. `'Issues'`, `'issues/board'` and `'dd.MM'` are the same
 shape and different things, so a mechanical rule about hardcoded text can only guess — and a guessing
 rule grows an exception list with every complaint until somebody turns it off. That is not
-hypothetical: `uiKitContainsText` carries eight hand-grown exceptions today, and it survives only
-because its scope is narrow enough for the guess to be safe (a kit file has no content to speak of).
-Widened to features, the same rule would be noise.
+hypothetical: `uiKitContainsText` carries nine hand-grown exceptions today — the ninth being the
+`fontFamily` / `fontFamilyFallback` argument positions, where the string is a typeface the platform's
+font matcher reads and nobody else does, with nowhere to be moved to since the kit is exactly where
+fonts belong — and it survives only because its scope is narrow enough for the guess to be safe (a
+kit file has no content to speak of). Widened to features, the same rule would be noise.
+
+That last exception is positional rather than per line, and deliberately so: the literal in the
+`fontFamily` argument is stepped over and the reading continues, so a real label sharing the line is
+still found. An exemption that swallows the whole line is how a rule stops firing without anyone
+noticing.
 
 A rule that needs understanding is not a weaker rule. It is a rule for a reader.
 
@@ -121,6 +128,9 @@ commit over a 210-line file is a check people disable.
 | `fileLong` | info | Over 200 lines |
 | `fileTooLong` | warning | Over 350 lines |
 | `generatedCodeUnformatted` | warning | The server's `lib/src/generated/` or the client's `lib/src/protocol/` differs from `dart format` |
+| `crudConfigMissing` | warning | A model with a table and no `DwCrudConfig` — the app cannot reach it |
+| `crudConfigUnregistered` | error | A config that exists and is not in `crudConfigurations` |
+| `crudRuleUntested` | warning | A config carrying save or delete logic that no server test names |
 
 "Raw styles" means `Color(`, `TextStyle(`, `BorderRadius`, `Theme.of(context)`, `context.theme`,
 `context.textTheme`, `context.colorScheme`. The long spelling is in the list on purpose: the rule
@@ -155,12 +165,30 @@ which Law 3 makes it: nobody outside a feature may import its `widgets/`/`logic/
 that its own feature never mentions is unreachable. It compiles, it survives refactors, and it is
 found in one folder-deep pass.
 
-Two things it does *not* get wrong, because both cost real false positives before they were fixed: a
-type is not how it is called (an extension is reached by member name, a notifier through its provider
-variable, so every public name a file declares counts), and dead code keeps dead code alive (a
-handler nobody calls still calls its own settings, so the sweep repeats until a pass buries nobody).
+Four things it does *not* get wrong, because every one of them cost a real false positive before it
+was fixed:
+
+- **a type is not how it is called** — an extension is reached by member name, a notifier through its
+  provider variable, so every public name a file declares counts;
+- **a function is a declaration too** — the index read classes, enums and top-level variables and, for
+  want of an anchor, every `final blob = …` inside a function body as well, while missing functions
+  and getters themselves. A file whose only public member was a top-level function was therefore
+  judged on the names of its own locals, which appear nowhere else by definition;
+- **a conditional import is one symbol in several files** — `foo.dart` forwarding to `foo_stub.dart` /
+  `foo_web.dart` has no file that carries the name alone: the forwarder declares nothing, and each
+  half is a platform the other build never compiles. The trio answers as one unit, alive together and
+  reported together;
+- **dead code keeps dead code alive** — a handler nobody calls still calls its own settings, so the
+  sweep repeats until a pass buries nobody.
+
 What it cannot see: a reference made through a string, and a file whose own halves only reference
 each other.
+
+The finding names where the file should go instead — `lib/shared/` for a building block with no story
+of its own, `lib/core/` for wiring several features share, `lib/core/platform/` for a platform trio.
+"Dead code" is half an answer: a file its own feature stopped using is often a file somebody else
+needs, and a message that names no destination leaves the author to find the intended shape by moving
+the file until the rule stops firing.
 
 **`frameworkRefsDiverged`** (warning) is the one check that reads no Dart at all. A project that
 consumes DartWay by git writes `ref: master` on every framework package, which reads as "all of it
@@ -201,6 +229,40 @@ the check exists at all — `app/admin/` is a perfectly ordinary group as far as
 concerned, which is how the admin panel spent a release outside the checks that were written for
 it. The pass covers the server package too (`lib/src/`), and `--dir` skips it, the same way it
 skips `ui_kit/`.
+
+## The three server checks: what fails closed, nobody sees fail
+
+The Flutter checks above catch code that is wrong in a way you can point at. The server ones catch
+something else — a project that is missing a piece, where every symptom is an absence.
+
+Generic CRUD is **secure by default**: a model nobody configured refuses every read and write with
+`notConfigured`. That is the right default, and it is silent. The table migrates, the server starts,
+the app compiles, and a list is empty forever. `crudConfigMissing` names the model, and it is a
+warning rather than an error because the absence has a second, legitimate reading — a table the
+server owns alone and no client should ever see. The check cannot tell the two apart; you can, and
+saying which it is costs one doc comment.
+
+`crudConfigUnregistered` is the same failure with no second reading, and it is the one worth the
+error. The config was written. It sits in `lib/src/crud/`, it reviews as finished, it has the access
+rules and the validation in it — and it was never added to the `crudConfigurations` list, so the API
+answers exactly as if the file did not exist. Nothing else in the toolchain has any opinion about
+this: it compiles, and the config is a value nobody is required to use.
+
+`crudRuleUntested` is the one that came out of writing the [testing skill](agent-toolkit.md). A CRUD
+config that only declares a shape — an `accessFilter`, an `include` — has no rule to hold and is not
+asked for anything. One that carries hand-written save or delete logic does, and that logic runs
+inside a request and reads the database to decide: no widget test can reach it, and a widget test
+proving the admin-only button is hidden proves only that the button is hidden. So the check looks
+for the model's name anywhere under the server's `test/`, and says so when it finds nothing. A
+mention is a loose signal on purpose — it is enough to raise the question and not enough to fail a
+build on, which is why this one is a warning too.
+
+**None of the three counts anything.** There is no percentage here and no threshold: each finding
+names one model and one thing to do about it. That is also why two things the checker could have
+guessed at are deliberately absent. A Flutter feature's tests are not countable without becoming the
+coverage number this exists instead of. And an *Event model* — a change written on top of a base — is
+a domain reading with no marker in the YAML: a rule keying off an `*Event` suffix would miss the one
+called `BalanceEntry` and fire on the one that is a plain lookup table.
 
 ## Why `generatedCodeUnformatted` is a warning that names a command
 
