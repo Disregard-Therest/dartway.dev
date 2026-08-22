@@ -86,6 +86,39 @@ reachable at all**. Access is something you grant, never something you forget to
 first encounter is a new model whose screen shows the "not configured" message — the config was
 written and the registration line was not.
 
+## When a call fails
+
+A denial and a failure are different answers. `notConfigured` and `notAuthenticated` above are
+decisions the server made on purpose; a **failure** is something that threw underneath — a table the
+database does not have yet, a column the schema never grew, a filter naming a field that does not
+exist.
+
+Every method of the CRUD endpoint runs inside one error boundary, so a failure is never a bare HTTP
+500. It comes back as `isOk: false` with the operation and the model in the text:
+
+```
+Unexpected error while handling the getAll request for ClubService
+```
+
+and the same failure — exception and the stack of the throw — is reported through `dw.alerts`
+(see [error reporting](error-reporting.md)). **The model name is the part that matters**: one
+endpoint serves every model in the application, so a report that says only which endpoint failed
+reads the same whichever list broke.
+
+Nothing about the failure text describes the database. What threw goes to the operator, never to the
+client — the same rule the save path states below for `DatabaseException`.
+
+**A business rule saying no is a denial, and every config has a channel for it that is not a
+throw.** In `DwSaveConfig` the rule hooks return the error text (`validateSave` and the ones inside
+the transaction — see the lifecycle below). In `DwDtoActionConfig` it is `validateAction` before the
+transaction opens, and `throw DwActionRejection('This message was already deleted')` from inside
+`actionProcessing`, where throwing is the only thing that rolls a transaction back. Either way the
+caller reads the text the rule was written in, word for word, and nothing reaches `dw.alerts`.
+
+Refusing with a bare `throw Exception('Not enough rights to delete this message')` is the other
+thing. The text is lost on the way out, the caller is shown "Unexpected error while handling the
+saveModel request", and the operator is paged for a rule doing its job.
+
 ## Saving: one lifecycle for insert and update
 
 `DwSaveConfig<T>` has no separate create and update paths. `saveContext.isInsert` tells the hooks
@@ -324,7 +357,10 @@ that is not about a single row.
 Two intermediate steps come first, and skipping them is the usual mistake:
 
 1. **A DTO config.** `DwDtoActionConfig<DTO>` runs an arbitrary transaction from a serializable
-   model that has no table and returns the models it touched — an action shaped as a save.
+   model that has no table and returns the models it touched — an action shaped as a save. Its
+   rules refuse through `validateAction` (before the transaction, return the error text) or
+   `DwActionRejection` (thrown from inside it, rolls the transaction back), never through a bare
+   exception — see [when a call fails](#when-a-call-fails).
    `DwDtoGetListConfig<DTO, Model>` serves a list of projections built from real rows.
 2. **A model for the event.** If the operation is a fact worth recording — an auth attempt, a
    balance movement — write the fact as a row and put the logic in its save config. That is how
