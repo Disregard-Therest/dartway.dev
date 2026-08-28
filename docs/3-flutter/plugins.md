@@ -95,6 +95,40 @@ DwAppRunner(
 ready before the first frame. A plugin that throws during `init()` surfaces on `DwAppRunner`'s error
 screen rather than half-booting the app.
 
+### What a failing plugin costs — `blocksStartup`
+
+**By default, everything: the app does not start.** `DwPlugin.blocksStartup` is `true` unless a plugin
+says otherwise, because a plugin an app declared is one it expects to have, and an app running
+without it is an app whose features fail one by one, later and further from the cause.
+
+Starting anyway is a decision, and it is made by the plugin that knows whether it is load-bearing:
+
+```dart
+class MyAnalytics extends DwPlugin {
+  // Its absence costs analytics and nothing else.
+  @override
+  bool get blocksStartup => false;
+
+  @override
+  Future<void> init(DwFlutter core) async { ... }
+}
+```
+
+A non-blocking failure is reported once through the error pipeline and the remaining plugins run.
+**Declaration order used to decide this silently:** the list ran bare, so a single `init` that threw
+aborted `dw.init()` and every plugin after it never ran — an optional integration listed first could
+take down an app that would have run perfectly without it. That is not something an app author
+weighs while writing `plugins: [...]`.
+
+Either way the failure now travels as `DwPluginInitException`, naming the plugin and carrying the
+cause, so a report says which plugin failed rather than showing a raw exception from inside a
+third-party package.
+
+Reaching for a plugin that failed says so. `of<T>()` throws a `StateError` naming the plugin and the
+failure — not a `LateInitializationError` from inside the package, which is what a swallowed error
+would have produced, further from the cause than the crash it replaced. `maybeOf<T>()` asks whether
+anybody holds a role, and a plugin that did not survive does not hold it, so it answers `null`.
+
 Declare a plugin and forget it, and the failure is loud and immediate: `dw.plugins.of<T>()` throws a
 `StateError` naming the type that was never registered. It cannot silently return null.
 
@@ -142,6 +176,31 @@ What a plugin must **not** do is keep the core and read it during `init` for som
 finished setting up. Session state is the usual example: at `init` time nobody is signed in yet.
 Capture the provider, watch it from the widget tree, and react — do not read a value.
 
+## A role the framework asks for: `DwKeyValueStorePlugin`
+
+Most plugins are an app reaching for its own integration. A few are the other way round — the
+framework needs a **job done** and has no opinion about who does it. Those are declared as an
+abstract role in the framework and claimed by whatever plugin an app declares:
+
+| role | who asks | what happens without one |
+|---|---|---|
+| `DwRepoLocalStorePlugin` | `dw.repo` | reads and writes stay network-only |
+| `DwKeyValueStorePlugin` | the auth key manager | a signed-in session cannot survive a reload, and the manager says so |
+
+`DwKeyValueStorePlugin` is a handful of key-value methods plus `isPersistent`. `DwSharedPreferences`
+claims it; an app that keeps its key somewhere of its own writes its own plugin, or hands
+`DwAuthenticationKeyManager` a store directly.
+
+**This replaced a second copy.** The core used to reach for `shared_preferences` itself, in its own
+`SharedPreferenceStorage`, while the plugin implemented the same job a package away — two
+implementations that agreed only because they happened to sit on the same store. A decision taken on
+one side could not be seen from the other, and a browser with no local storage broke both,
+separately. One implementation, named through a role, is what the role is for.
+
+The framework asks with `maybeOf`, so absence is an ordinary answer to the question rather than a
+crash — the key manager turns it into a message naming the plugin to declare, at the moment
+something actually needs the key.
+
 ## Distribution: pub.dev, and nothing else
 
 **Plugins ship on pub.dev, versioned independently of the core.** Not as a git ref, not as a path
@@ -166,7 +225,7 @@ combinations that were never tested instead of failing at runtime.
 
 | Package | Reached as | What it is |
 |---|---|---|
-| [`dartway_shared_preferences`](https://pub.dev/packages/dartway_shared_preferences) | `dw.plugins.prefs` | Reactive riverpod providers over local storage |
+| [`dartway_shared_preferences`](https://pub.dev/packages/dartway_shared_preferences) | `dw.plugins.prefs` | Reactive riverpod providers over local storage; claims `DwKeyValueStorePlugin`, so it is also where the signed-in session's key lives |
 | [`dartway_telegram`](https://pub.dev/packages/dartway_telegram) | `dw.plugins.telegram` | Telegram Mini App: viewport, safe-area insets, Telegram user id |
 | [`dartway_push_flutter`](https://pub.dev/packages/dartway_push_flutter) | `dw.plugins.push` | [Push notifications](push-notifications.md): permissions, token lifecycle, taps — with the transport itself in a package of its own |
 | [`dartway_offline_flutter`](https://pub.dev/packages/dartway_offline_flutter) | `dw.plugins.offline` | [Offline](offline.md): the local copy `dw.repo` reads and writes through, plus downloads, signed access leases and trusted time |
