@@ -62,16 +62,27 @@ So do not edit a `dartway-*` skill in place; the next `setup-ai` will drop your 
 floor. To customize, **copy the skill under a different name** and edit the copy. The source of
 truth is the toolkit in the monorepo, and there is no reverse sync.
 
-Updating is a deliberate act with a visible diff: run `setup-ai` again, read what changed, commit.
+Updating is a deliberate act with a visible diff: run `setup-ai` again, read what changed, commit. What
+was installed is written down beside it, in `.claude/dartway-toolkit.json` — repository, channel,
+commit, CLI version — because the files themselves do not say which channel they follow, and
+`--channel` defaults to `stable`. Update a project that had been moved to `master` with the plain
+command and it would be rolled back, with the diff looking like any other update; instead the
+command refuses and asks for the channel by name.
 
-`.claude/settings.json` sits on the other side of that line: it is written once, when the project
-has none, and never touched again. It pre-approves this stack's build commands — `dart pub get`,
-`docker compose up`, `serverpod generate`, the test runners — so a first run is not a queue of
+`.claude/settings.json` sits on neither side of that line, and is the third kind of file here: a
+toolkit default the project **extends**. It pre-approves this stack's build commands — `dart pub
+get`, `docker compose up`, `serverpod generate`, the test runners — so a first run is not a queue of
 permission prompts, and it denies reading `config/passwords.yaml`, which turns a rule the skills
 merely state into one the harness enforces. Nothing destructive is on the allow list: `docker
-compose down`, commits and pushes still ask. A project adds its own permissions there, and an
-update will not take them away — the price being that a changed default reaches an existing project
-only if someone deletes the file first.
+compose down`, commits and pushes still ask.
+
+An update **merges** it: entries the toolkit has and the project lacks are added, everything the
+project added stays, and every added entry is printed. It used to be written once and never touched,
+which sounds like the safe choice and is only half of one — a changed default then reached an
+existing project only if somebody deleted the file first, and a new `deny` rule reached none of
+them, which is precisely the half the harness is supposed to enforce rather than state. The one cost
+of merging is an entry a project removed on purpose coming back; that is why every addition is named
+in the output rather than applied quietly.
 
 That is also why a finding about the framework leaves the project entirely. A rule that did not catch
 a mistake, two skills that disagree, an API the app had to work around — none of that can be fixed in
