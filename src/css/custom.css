@@ -189,13 +189,16 @@ html[data-theme='dark'] {
     backdrop-filter: none;
   }
 
-  #__docusaurus:has(.homePage, .frameworkPage) .navbar__logo,
-  #__docusaurus:has(.homePage, .frameworkPage) .navbar__logo img {
+  /* Same `.navbar__inner` scope as the desktop landing rules above. Without it
+   * those sit one class higher and win here, and the landing logo goes back to
+   * its full 84px on a phone. */
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__logo,
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__logo img {
     width: 58px;
     height: 58px;
   }
 
-  #__docusaurus:has(.homePage, .frameworkPage) .navbar__title {
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__title {
     font-size: 1.1rem;
   }
 
@@ -211,14 +214,14 @@ html[data-theme='dark'] {
     position: absolute;
     right: 0;
     display: inherit;
-    color: rgba(255, 255, 255, 0.88);
+    color: var(--dw-chrome-fg);
   }
 
   .navbar__items--right {
     display: none;
   }
 
-  #__docusaurus:has(.homePage, .frameworkPage) .navbar__toggle {
+  #__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__toggle {
     color: rgba(255, 255, 255, 0.9);
   }
 
