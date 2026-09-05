@@ -4,6 +4,9 @@
  * English is the source language and sits at the root; Russian is a subset at
  * /ru. The framework documentation is generated from the monorepo and published
  * in English only — see STRATEGY.md — so `/docs/*` has no Russian counterpart.
+ * `/blog/*` is English-only for a different reason: the translator does not
+ * cover blog/ yet, and a Russian URL serving English prose is the failure this
+ * file exists to prevent. It stops being English-only the day that changes.
  *
  * Two places need to know that and must not learn it separately: the navbar
  * language switch, and the hreflang tags in src/theme/SiteMetadata. A page
@@ -16,7 +19,7 @@
 export const RU_PREFIX = '/ru';
 
 /** Route prefixes built only under the default locale. */
-const DEFAULT_LOCALE_ONLY = ['/docs'];
+const DEFAULT_LOCALE_ONLY = ['/docs', '/blog'];
 
 /** The path with its locale prefix removed — i.e. the English URL of a page. */
 export function stripLocale(pathname: string, currentLocale: string): string {

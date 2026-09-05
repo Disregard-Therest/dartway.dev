@@ -1,0 +1,18 @@
+# Three sections, from STRATEGY.md stage 4: framework releases, engineering
+# writing, case breakdowns. `onInlineTags: throw` means a post cannot invent a
+# fourth in passing — adding one is a decision made here.
+
+engineering:
+  label: Engineering
+  permalink: /engineering
+  description: How something was built and what it cost to build it that way.
+
+case-breakdown:
+  label: Case breakdown
+  permalink: /case-breakdown
+  description: A problem taken from a live product, followed to its cause.
+
+release:
+  label: Release
+  permalink: /release
+  description: What shipped in the framework and what it changes for you.

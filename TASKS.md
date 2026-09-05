@@ -46,18 +46,33 @@ Nothing here can be done from inside the repository.
 - [ ] **Search over the docs.** 21 pages is past the point where browsing is comfortable. Either
       Algolia DocSearch (free, but an application and a wait) or a local search plugin (works today,
       no external dependency).
-- [ ] **Redirects for the old doc URLs.** Everything under the pre-sync structure now 404s —
-      `/docs/intro`, `/docs/quick-start`, `/docs/foundations/*`, `/docs/server/*`, `/framework`.
-      Deliberately skipped before publishing; still worth doing, and it does not expire.
-      `@docusaurus/plugin-client-redirects` generates static redirect pages, so GitHub Pages is fine.
-      Note that several old pages have no equivalent in the new docs (`navigation`,
-      `naming_conventions`, the three `dartway_specials`) and can only go to a nearby section.
+- [x] **Redirects for the old doc URLs.** Done 2026-09-05. Eighteen of them —
+      `/docs/intro`, `/docs/quick-start`, `/docs/foundations/*`, `/docs/flutter/*` under the old
+      names, `/docs/server/*`, `/framework`. The five with no successor (`navigation`,
+      `naming_conventions`, the three `dartway_specials`) go to the nearest section, not to the
+      landing: a redirect that drops the reader at the front door reads as a dead link.
+      Registered under the default locale only — `/docs` never existed at `/ru`.
+      **Worth knowing:** the plugin does not check that a target exists, and `onBrokenLinks` does not
+      see redirect targets either. A typo here produces a redirect into a 404 and the build stays
+      green. Both ends were verified against `build/` by hand.
 - [ ] **Per-page structured data.** `TechArticle` on doc pages, which needs swizzling the doc
       component — unlike the site-wide `SoftwareApplication` tag already in `headTags`.
 - [ ] **Per-page OG images.**
 - [ ] **A page for the counter's numbers.** Reading `/stats` JSON by hand gets old. Worth doing once
       there is data in it.
-- [ ] **Stage 4: the blog.** Already present in the config, commented out. Release notes, engineering
+- [x] **Stage 4: the blog — turned on.** Done 2026-09-05, with RSS and Atom from the first post:
+      a feed cannot be backfilled once posts have gone out without one. Three tags matching the
+      sections in STRATEGY.md, with `onInlineTags: 'throw'` so a post cannot invent a fourth in
+      passing. English-only, on the same terms as `/docs` and registered the same way — a custom
+      navbar item plus `src/localeRoutes.ts` — because `npm run translate` does not know about
+      `blog/`.
+      First post: *One account, two doors*, from the auth identity work in core 0.12.1.
+- [ ] **Teach the translator about `blog/`.** Until then `/blog` is English-only, and the Russian
+      audience — the larger of the two channels — does not get the writing at all.
+      `tools/translate.mjs` builds one job per page under `learn/`; blog posts need the same, plus a
+      home at `i18n/ru/docusaurus-plugin-content-blog/`. Removing `/blog` from `DEFAULT_LOCALE_ONLY`
+      is the last step, not the first.
+- [ ] **Stage 4, the rest: the per-channel process.** Release notes, engineering
       writing, case breakdowns — and the source material for social posts.
 - [ ] **Distribution.** pub.dev descriptions, the GitHub README, dev.to, r/FlutterDev. This is how
       models learn the framework exists at all.

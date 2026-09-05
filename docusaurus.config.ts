@@ -1,5 +1,5 @@
 import type * as Preset from '@docusaurus/preset-classic';
-import type { Config } from '@docusaurus/types';
+import type { Config, PluginConfig } from '@docusaurus/types';
 import { themes as prismThemes } from 'prism-react-renderer';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
@@ -118,11 +118,38 @@ const config: Config = {
         // than existing and serving English under a Russian URL. The rule is
         // restated for the runtime in src/localeRoutes.ts.
         docs: isDefaultLocale ? { sidebarPath: './sidebars.ts' } : false,
-        // preset-classic enables the blog unless told otherwise, and since 3.10
-        // it publishes an empty /blog even with no posts. Off until stage 4
-        // turns it on deliberately — an empty page is not something to leave
-        // for Google to index.
-        blog: false,
+        // Stage 4. English-only on the same terms as the documentation, and
+        // for the same reason: `npm run translate` does not know about blog/
+        // yet, so a Russian blog would serve English prose under a /ru URL and
+        // advertise a translation nobody wrote. Restated in src/localeRoutes.ts.
+        //
+        // Feeds are on from the first post. Aggregators and readers subscribe to
+        // a feed that exists; a subscription cannot be backfilled once posts
+        // have gone out without one.
+        blog: isDefaultLocale
+          ? {
+              path: 'blog',
+              routeBasePath: 'blog',
+              blogTitle: 'DartWay Blog',
+              blogDescription:
+                'Full-stack Dart in production: engineering writing, case breakdowns, framework releases.',
+              blogSidebarTitle: 'Recent posts',
+              blogSidebarCount: 10,
+              postsPerPage: 10,
+              showReadingTime: true,
+              feedOptions: {
+                type: ['rss', 'atom'],
+                title: 'DartWay Blog',
+                description:
+                  'Full-stack Dart in production: engineering writing, case breakdowns, framework releases.',
+                copyright: `Copyright © ${new Date().getFullYear()} DartWay.`,
+                xslt: true,
+              },
+              onInlineTags: 'throw',
+              onInlineAuthors: 'throw',
+              onUntruncatedBlogPosts: 'throw',
+            }
+          : false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -131,6 +158,49 @@ const config: Config = {
   ],
 
   plugins: [
+    // The pre-sync documentation URLs, kept alive. They are indexed and they are
+    // the only non-branded search traffic the site has; a 404 loses the position
+    // and the position is slow to come back. Several old pages have no successor
+    // — `navigation`, `naming_conventions`, the three `dartway_specials` — and
+    // those go to the nearest section rather than to the landing, because a
+    // redirect that drops the reader at the front door reads as a dead link.
+    //
+    // English only: /docs never existed under /ru, so there is nothing to
+    // redirect there, and the plugin would fabricate /ru/docs/* routes that
+    // src/localeRoutes.ts exists to keep from existing.
+    ...(isDefaultLocale
+      ? ([
+          [
+            '@docusaurus/plugin-client-redirects',
+            {
+              redirects: [
+                { from: '/framework', to: '/' },
+
+                { from: '/docs/intro', to: '/docs/getting-started/what-is-dartway' },
+                { from: '/docs/quick-start', to: '/docs/getting-started/quick-start' },
+
+                { from: '/docs/foundations/architecture', to: '/docs/getting-started/what-is-dartway' },
+                { from: '/docs/foundations/dartway_specials', to: '/docs/getting-started/what-is-dartway' },
+                { from: '/docs/foundations/domain_and_crud', to: '/docs/core/models' },
+                { from: '/docs/foundations/creating_a_feature', to: '/docs/flutter/features-and-specs' },
+                { from: '/docs/foundations/naming_conventions', to: '/docs/tooling/conventions-checker' },
+
+                { from: '/docs/flutter/flutter_project_structure', to: '/docs/getting-started/project-layout' },
+                { from: '/docs/flutter/feature_architecture', to: '/docs/flutter/features-and-specs' },
+                { from: '/docs/flutter/ui_kit', to: '/docs/flutter/ui-kit' },
+                { from: '/docs/flutter/navigation', to: '/docs/flutter/features-and-specs' },
+                { from: '/docs/flutter/dartway_specials', to: '/docs/flutter/data-layer' },
+
+                { from: '/docs/server/crud_configs', to: '/docs/core/crud-configs' },
+                { from: '/docs/server/defining_models', to: '/docs/core/models' },
+                { from: '/docs/server/server_initialization', to: '/docs/getting-started/quick-start' },
+                { from: '/docs/server/server_project_structure', to: '/docs/getting-started/project-layout' },
+                { from: '/docs/server/dartway_specials', to: '/docs/core/crud-configs' },
+              ],
+            },
+          ],
+        ] satisfies PluginConfig[])
+      : []),
     [
       '@docusaurus/plugin-content-docs',
       {
@@ -170,6 +240,10 @@ const config: Config = {
           to: '/learn',
           position: 'right',
           label: 'Learn',
+        },
+        {
+          type: 'custom-blogLink',
+          position: 'right',
         },
         {
           type: 'custom-localeSwitch',

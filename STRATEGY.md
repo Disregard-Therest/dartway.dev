@@ -241,11 +241,18 @@ writing, which is a blog job with a heavier verification process, not a map job.
 Still to do here: the six areas can go deeper, and the map should be revisited as the field moves —
 particularly the AI area, which is the one with the least settled material anywhere.
 
-### Stage 4 — blog and social
+### Stage 4 — blog and social — *turned on*
 
-Enable the blog (already present, commented out in config). Sections: framework releases,
-engineering writing, case breakdowns. On top of it, a repeatable process turning one post into
-per-channel variants.
+The blog is live at `/blog` with RSS and Atom, three tags for the three sections — framework
+releases, engineering writing, case breakdowns — and the first post: *One account, two doors*, on
+what phone-or-email login actually costs, taken from the auth identity work in core 0.12.1.
+
+**English-only for now, and that is a real gap rather than a design choice.** The documentation is
+English-only because translating generated pages would rot; the blog is English-only only because
+`npm run translate` does not know the section yet. The Russian channel is the larger of the two
+audiences, so this is the first thing to fix in this stage, ahead of any second post.
+
+Still to do: the repeatable process turning one post into per-channel variants.
 
 ### Stage 5 — the GEO layer — *partly done*
 

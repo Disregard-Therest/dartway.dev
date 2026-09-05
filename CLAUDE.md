@@ -43,6 +43,7 @@ Everything else in the repo is written here, by hand, normally, **in English** �
 | `docs/` | **Generated.** Framework documentation, synced from the monorepo |
 | `i18n/ru/` | **Generated.** The Russian site, translated from the English source |
 | `learn/` | Hand-written. The competency map — served at `/learn` |
+| `blog/` | Hand-written, English only. Posts, `authors.yml`, `tags.yml` — served at `/blog` |
 | `src/pages/` | Hand-written. Landing page and any standalone pages |
 | `src/clientModules/` | Runs on every page. Currently the analytics client |
 | `src/css/`, `src/components/` | Hand-written. Theme and shared components |
@@ -105,8 +106,15 @@ names when building URLs, so `docs/1-getting-started/quick-start.md` serves at
 `/docs/getting-started/quick-start`. Renaming a folder upstream changes a public URL — worth
 noticing in a sync diff.
 
-**The blog is off deliberately.** `preset-classic` enables it unless told otherwise and publishes an
-empty `/blog` with no posts. Turn it on when there is something to put in it.
+**The blog is English-only, like `/docs`, and for a different reason.** `npm run translate` builds
+jobs from `learn/` and knows nothing about `blog/`, so a Russian blog would serve English prose under
+a `/ru` URL. Adding a post is therefore ordinary hand-written English in `blog/` and nothing else —
+until the translator learns the section, at which point `/blog` comes out of `DEFAULT_LOCALE_ONLY`
+in `src/localeRoutes.ts` and the navbar item can go back to being a plain `to:` link.
+
+**A post's tags must already exist in `blog/tags.yml`.** `onInlineTags: 'throw'` — the three tags are
+the three sections the strategy names, and a fourth is a decision made in that file, not in a post's
+frontmatter. Same for authors and for a post with no `<!-- truncate -->`: all three throw.
 
 ## Adding a competency-map page
 
