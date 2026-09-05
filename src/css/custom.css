@@ -8,6 +8,28 @@
   --ifm-color-primary-light: #c133ff;
   --ifm-color-primary-lighter: #cd4fff;
   --ifm-color-primary-lightest: #dc80ff;
+
+  /* The chrome: navbar and the mobile drawer.
+   *
+   * These used to be literals — #05060c with white text — written directly into
+   * the rules, so the theme switch moved the page underneath and left the frame
+   * dark. In light mode a dark navbar over a light body does not read as a
+   * design decision, it reads as a half-loaded page.
+   *
+   * The landing is the deliberate exception below: its navbar is transparent
+   * over a dark photograph and stays light-on-dark in both themes, because what
+   * is behind it does not change with the theme. */
+  --dw-chrome-bg: #ffffff;
+  --dw-chrome-fg: rgba(17, 19, 28, 0.78);
+  --dw-chrome-fg-strong: #11131c;
+  --dw-chrome-border: rgba(17, 19, 28, 0.1);
+}
+
+html[data-theme='dark'] {
+  --dw-chrome-bg: #05060c;
+  --dw-chrome-fg: rgba(255, 255, 255, 0.88);
+  --dw-chrome-fg-strong: #ffffff;
+  --dw-chrome-border: rgba(255, 255, 255, 0.08);
 }
 
 /* Customize primary button */
@@ -24,17 +46,17 @@
 
 /* Dark navbar for documentation and inner pages */
 .navbar {
-  background: #05060c;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--dw-chrome-bg);
+  border-bottom: 1px solid var(--dw-chrome-border);
   box-shadow: none;
 }
 
 .navbar__title {
-  color: #fff !important;
+  color: var(--dw-chrome-fg-strong) !important;
 }
 
 .navbar__brand svg path {
-  fill: #fff;
+  fill: var(--dw-chrome-fg-strong);
 }
 
 .navbar__brand {
@@ -60,13 +82,13 @@
 .navbar__item,
 .navbar__toggle,
 .navbar .clean-btn {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--dw-chrome-fg);
 }
 
 .navbar__link:hover,
 .navbar__brand:hover .navbar__title,
 .navbar .clean-btn:hover {
-  color: #fff !important;
+  color: var(--dw-chrome-fg-strong) !important;
 }
 
 .navbar__items--right {
@@ -95,6 +117,9 @@
   text-decoration: none;
 }
 
+/* The landing: the navbar sits on the hero photograph, which is dark in both
+ * themes, so this block stays light-on-dark on purpose and does not use the
+ * chrome tokens. */
 #__docusaurus:has(.homePage, .frameworkPage) .navbar {
   position: absolute;
   top: 0;
@@ -203,21 +228,21 @@
 
   .navbar-sidebar {
     max-height: 100vh;
-    background: #05060c;
-    color: #fff;
+    background: var(--dw-chrome-bg);
+    color: var(--dw-chrome-fg-strong);
   }
 
   .navbar-sidebar .menu__link,
   .navbar-sidebar .navbar__item,
   .navbar-sidebar .dropdown__link,
   .navbar-sidebar .clean-btn {
-    color: rgba(255, 255, 255, 0.88);
+    color: var(--dw-chrome-fg);
   }
 
   .navbar-sidebar .menu__link:hover,
   .navbar-sidebar .dropdown__link:hover,
   .navbar-sidebar .clean-btn:hover {
-    color: #fff;
+    color: var(--dw-chrome-fg-strong);
   }
 }
 
@@ -239,4 +264,38 @@
 /* Optional: soft glow on hover */
 .button.button--primary:hover {
   box-shadow: 0 4px 20px rgba(177, 0, 255, 0.6);
+}
+
+
+/* The language selector.
+ *
+ * A button rather than an anchor: it opens a menu, it does not go anywhere.
+ * Infima's hoverable dropdown only opens on :hover, which leaves the keyboard
+ * out, so :focus-within repeats what .dropdown--show does. */
+.navbar__language-trigger {
+  border: 0;
+  background: none;
+  padding: var(--ifm-navbar-item-padding-vertical) var(--ifm-navbar-item-padding-horizontal);
+  font: inherit;
+  cursor: pointer;
+}
+
+.navbar__item.dropdown:focus-within .dropdown__menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-1px);
+  pointer-events: all;
+}
+
+.dropdown__link--active {
+  font-weight: 700;
+}
+
+/* The label above the two languages in the mobile drawer: a caption, not a link. */
+.navbar__language-label {
+  opacity: 0.6;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: default;
 }
