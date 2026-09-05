@@ -28,6 +28,12 @@ Nothing here can be done from inside the repository.
 
 ## Next up
 
+- [ ] **A light-mode wordmark.** `static/img/dartway_logo.svg` wraps a monochrome bitmap whose every
+      visible pixel is the same near-white grey, so on a light surface it disappeared. Light mode now
+      darkens it with `filter: brightness(0)`, which is exact for this image and would be wrong for
+      any coloured one. A real second asset — or a true vector whose `fill` can be driven by
+      `currentColor` — replaces the filter and survives a redesign of the mark.
+
 - [ ] **Landing: re-frame the cases.** TVAITY and Kerla are written in agency language ("helped the
       founder…", DAU counts). For a framework the framing should be what was built on it and what it
       holds up to. Needs facts only the owner has. **Re-run `npm run translate` afterwards** — the

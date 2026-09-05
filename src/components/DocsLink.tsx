@@ -62,7 +62,20 @@ export default function DocsLink({ className, children, ...rest }: Props): JSX.E
   );
 }
 
-/** The navbar wrapper: same link, plus the classes the theme expects. */
+/**
+ * The navbar wrapper: same link, plus the classes the theme expects.
+ *
+ * The mobile sidebar renders its items straight into a `<ul>` and supplies no
+ * wrapper, so each item owns its `<li>` — the theme's own items do, and without
+ * one this anchor was a direct child of the list.
+ */
 export function DocsNavbarItem({ mobile }: { readonly mobile?: boolean }): JSX.Element {
-  return <DocsLink className={mobile ? 'menu__link' : 'navbar__item navbar__link'} />;
+  if (mobile) {
+    return (
+      <li className="menu__list-item">
+        <DocsLink className="menu__link" />
+      </li>
+    );
+  }
+  return <DocsLink className="navbar__item navbar__link" />;
 }

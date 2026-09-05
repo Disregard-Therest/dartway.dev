@@ -3,7 +3,7 @@ import { translate } from '@docusaurus/Translate';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { isTranslated, RU_PREFIX, stripLocale } from '@site/src/localeRoutes';
 import clsx from 'clsx';
-import { JSX } from 'react';
+import { JSX, useState } from 'react';
 
 /**
  * The language switch in the navbar.
@@ -84,6 +84,40 @@ type Props = {
   readonly className?: string;
 };
 
+function LocaleMobileItem({
+  label,
+  current,
+  items,
+}: {
+  readonly label: string;
+  readonly current: Option;
+  readonly items: readonly Option[];
+}): JSX.Element {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <li className={clsx('menu__list-item', !expanded && 'menu__list-item--collapsed')}>
+      <button
+        type="button"
+        className="menu__link menu__link--sublist navbar__language-sublist"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        {label}: {current.code}
+      </button>
+      {expanded && (
+        <ul className="menu__list">
+          {items.map((item) => (
+            <li className="menu__list-item" key={item.locale}>
+              <LocaleAnchor option={item} className="menu__link" />
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 export default function LocaleSwitchNavbarItem({ mobile, className }: Props): JSX.Element {
   const {
     i18n: { currentLocale },
@@ -99,18 +133,12 @@ export default function LocaleSwitchNavbarItem({ mobile, className }: Props): JS
     message: 'Language',
   });
 
-  // The mobile sidebar has no hover, and the theme already supplies the <li>.
-  // Both languages are listed outright — with two of them a collapsible section
-  // costs a tap and saves nothing.
+  // The drawer has no hover, so it gets the theme's own collapsible instead —
+  // the same control the theme's dropdowns use there, closed until tapped.
+  // Listing both languages flat, as this did first, read as two more sections
+  // of the site rather than as one choice.
   if (mobile) {
-    return (
-      <>
-        <div className="menu__link menu__link--sublist-caret-none navbar__language-label">{label}</div>
-        {items.map((item) => (
-          <LocaleAnchor key={item.locale} option={item} className="menu__link" />
-        ))}
-      </>
-    );
+    return <LocaleMobileItem label={label} current={current} items={items} />;
   }
 
   return (

@@ -119,7 +119,12 @@ html[data-theme='dark'] {
 
 /* The landing: the navbar sits on the hero photograph, which is dark in both
  * themes, so this block stays light-on-dark on purpose and does not use the
- * chrome tokens. */
+ * chrome tokens.
+ *
+ * Every colour rule here is scoped to `.navbar__inner` — the navbar row itself.
+ * The mobile drawer is a sibling of that row inside the same `.navbar`, so an
+ * unscoped rule reached into it and painted its title and its close button
+ * white on a white sheet: on the landing the drawer opened apparently empty. */
 #__docusaurus:has(.homePage, .frameworkPage) .navbar {
   position: absolute;
   top: 0;
@@ -137,31 +142,31 @@ html[data-theme='dark'] {
   margin: 0 auto;
 }
 
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__logo {
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__logo {
   width: 84px;
   height: 84px;
 }
 
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__logo img {
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__logo img {
   width: 84px;
   height: 84px;
   object-fit: contain;
 }
 
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__title {
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__title {
   color: #fff !important;
   font-size: 1.4rem;
 }
 
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__link,
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__item,
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__toggle,
-#__docusaurus:has(.homePage, .frameworkPage) .navbar .clean-btn {
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__link,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__item,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__toggle,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .clean-btn {
   color: rgba(255, 255, 255, 0.9);
 }
 
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__link:hover,
-#__docusaurus:has(.homePage, .frameworkPage) .navbar__brand:hover .navbar__title {
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__link:hover,
+#__docusaurus:has(.homePage, .frameworkPage) .navbar__inner .navbar__brand:hover .navbar__title {
   color: #fff !important;
 }
 
@@ -298,4 +303,46 @@ html[data-theme='dark'] {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: default;
+}
+
+
+/* The wordmark is a monochrome white bitmap wrapped in an SVG — every visible
+ * pixel is the same near-white grey — so `fill` never reached it and it simply
+ * vanished on a light surface. `brightness(0)` takes an image whose pixels are
+ * all one light tone down to black without touching the alpha, which is exactly
+ * the case here and would be wrong for a coloured mark.
+ *
+ * A real light-mode asset would be better than a filter; until there is one,
+ * this is the honest fallback. Logged in TASKS.md. */
+html:not([data-theme='dark']) .navbar__logo img {
+  filter: brightness(0);
+}
+
+/* Except on the landing's own navbar row, which lies on the dark photograph. */
+html:not([data-theme='dark'])
+  #__docusaurus:has(.homePage, .frameworkPage)
+  .navbar__inner
+  .navbar__logo
+  img {
+  filter: none;
+}
+
+/* The drawer is a sheet in the page's own colours, wherever it was opened from. */
+.navbar-sidebar .navbar__title {
+  color: var(--dw-chrome-fg-strong) !important;
+}
+
+.navbar-sidebar .navbar-sidebar__close {
+  color: var(--dw-chrome-fg-strong);
+}
+
+/* The language section in the drawer: a real collapsible, like the theme's own
+ * dropdowns, rather than two links listed one after another. */
+.navbar__language-sublist {
+  width: 100%;
+  text-align: start;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
 }
