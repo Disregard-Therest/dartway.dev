@@ -176,6 +176,21 @@ const config: Config = {
               redirects: [
                 { from: '/framework', to: '/' },
 
+                // `/education` was the competency map's address until it was
+                // renamed to `/learn`. The counter says people still arrive on
+                // it — nine views last month on a 404, which is more than most
+                // live pages get. Added 06.09 once there were numbers to see it.
+                { from: '/education', to: '/learn' },
+                { from: '/education/competency-map', to: '/learn' },
+                {
+                  from: '/education/core-engineering/computer-science-fundamentals/algorithms-and-data-structures',
+                  to: '/learn/foundations/algorithms-and-data-structures',
+                },
+                {
+                  from: '/education/flutter-mobile-dev/state-management',
+                  to: '/learn/flutter/state-and-data-flow',
+                },
+
                 { from: '/docs/intro', to: '/docs/getting-started/what-is-dartway' },
                 { from: '/docs/quick-start', to: '/docs/getting-started/quick-start' },
 

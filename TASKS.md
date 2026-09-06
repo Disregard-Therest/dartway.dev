@@ -19,6 +19,9 @@ Nothing here can be done from inside the repository.
       not cover and never will. `robots.txt` now lists both, which is enough for discovery; the
       submission is what gives per-sitemap coverage figures, and comparing those two numbers is the
       measurement the Russian site was built for.
+- [x] **Read the counter.** Done 2026-09-06, first time since it was deployed. The token is not
+      retrievable — it is a password chosen here, so it was rotated: `npm run token:new`, `.env`,
+      `npm run worker:secret`. 644 pageviews in 30 days, and the shape of them is in STRATEGY §7.
 - [x] **Deploy the page counter.** Done 2026-08-01. Live at
       `dartway-analytics.dartway.workers.dev`, verified end to end: event recorded, stats read back,
       and the endpoint present in the published bundle. Read it with `npm run stats`.

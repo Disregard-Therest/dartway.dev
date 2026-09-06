@@ -267,6 +267,33 @@ framework citable at all (pub.dev, GitHub, dev.to, r/FlutterDev).
 
 ---
 
+
+### First reading of the counter — 2026-09-06
+
+Thirty days, 644 pageviews, and it says something the roadmap only assumed.
+
+**The Russian half is the site.** `/ru/learn` is the single most-read page at 130 views; the
+English `/learn` hub does not reach the top fifteen. On the same topic — algorithms and data
+structures — Russian has 53 views to English's 8. Section 2 called the learner the largest group
+and the only source of non-branded traffic; that is now measured rather than assumed, and it is
+overwhelmingly the Russian learner.
+
+**Which makes the English-only blog the wrong shape.** It shipped that way for a mechanical reason
+— the translator does not know the section — and these numbers turn that from a gap into the most
+expensive open item in stage 4.
+
+**LinkedIn is the second engine.** Referrers: Google 93, the site itself 93, then LinkedIn 57 plus
+17 from its Android app — 74 in total, against 8 from Telegram and 7 from pub.dev. The personal
+brand work feeds this site more than the channel does.
+
+**The quick-start CTA is being clicked.** 23 `cta:hero-docs` against 98 landing views. Section 7
+names that click as the only signal that evaluation turned into an attempt, and it is not zero.
+
+**Dead addresses were taking real traffic.** `/docs/flutter/ui_kit` 10, `/education/flutter-mobile-dev/state-management`
+9, `/docs/intro` 8, `/docs/flutter/dartway_specials` 8 — more than most live pages get, all of it
+landing on a 404 until the redirects shipped on 05.09. `/education/*` was missed in that pass and
+added on 06.09, once there were numbers to see it by.
+
 ## 7. How to tell it is working
 
 Deliberately few, because vanity metrics on a site this young mean nothing.
