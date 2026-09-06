@@ -118,38 +118,41 @@ const config: Config = {
         // than existing and serving English under a Russian URL. The rule is
         // restated for the runtime in src/localeRoutes.ts.
         docs: isDefaultLocale ? { sidebarPath: './sidebars.ts' } : false,
-        // Stage 4. English-only on the same terms as the documentation, and
-        // for the same reason: `npm run translate` does not know about blog/
-        // yet, so a Russian blog would serve English prose under a /ru URL and
-        // advertise a translation nobody wrote. Restated in src/localeRoutes.ts.
+        // Stage 4. Both locales since 06.09.2026: `tools/translate.mjs` now
+        // builds a job per post, so /ru/blog carries Russian prose rather than
+        // English under a Russian URL. It shipped English-only for one week and
+        // the counter said what that cost — see STRATEGY.md §7.
         //
         // Feeds are on from the first post. Aggregators and readers subscribe to
         // a feed that exists; a subscription cannot be backfilled once posts
         // have gone out without one.
-        blog: isDefaultLocale
-          ? {
-              path: 'blog',
-              routeBasePath: 'blog',
-              blogTitle: 'DartWay Blog',
-              blogDescription:
-                'Full-stack Dart in production: engineering writing, case breakdowns, framework releases.',
-              blogSidebarTitle: 'Recent posts',
-              blogSidebarCount: 10,
-              postsPerPage: 10,
-              showReadingTime: true,
-              feedOptions: {
-                type: ['rss', 'atom'],
-                title: 'DartWay Blog',
-                description:
-                  'Full-stack Dart in production: engineering writing, case breakdowns, framework releases.',
-                copyright: `Copyright © ${new Date().getFullYear()} DartWay.`,
-                xslt: true,
-              },
-              onInlineTags: 'throw',
-              onInlineAuthors: 'throw',
-              onUntruncatedBlogPosts: 'throw',
-            }
-          : false,
+        blog: {
+          path: 'blog',
+          routeBasePath: 'blog',
+          blogTitle: 'DartWay Blog',
+          blogDescription:
+            'Full-stack Dart in production: engineering writing, case breakdowns, framework releases.',
+          blogSidebarTitle: 'Recent posts',
+          blogSidebarCount: 10,
+          postsPerPage: 10,
+          showReadingTime: true,
+          // The feed's own title and description are not covered by the
+          // plugin's i18n — `options.json` translates the blog pages, the feed
+          // is built from these. Set per locale here, or the Russian feed goes
+          // out titled in English to readers who subscribed to Russian.
+          feedOptions: {
+            type: ['rss', 'atom'],
+            title: isDefaultLocale ? 'DartWay Blog' : 'Блог DartWay',
+            description: isDefaultLocale
+              ? 'Full-stack Dart in production: engineering writing, case breakdowns, framework releases.'
+              : 'Full-stack Dart в проде: инженерные разборы, кейсы, релизы фреймворка.',
+            copyright: `Copyright © ${new Date().getFullYear()} DartWay.`,
+            xslt: true,
+          },
+          onInlineTags: 'throw',
+          onInlineAuthors: 'throw',
+          onUntruncatedBlogPosts: 'throw',
+        },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -257,8 +260,9 @@ const config: Config = {
           label: 'Learn',
         },
         {
-          type: 'custom-blogLink',
+          to: '/blog',
           position: 'right',
+          label: 'Blog',
         },
         {
           type: 'custom-localeSwitch',

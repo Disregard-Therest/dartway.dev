@@ -46,10 +46,12 @@ const CONCURRENCY = 4;
 const TIMEOUT_MS = 10 * 60 * 1000;
 
 const LEARN_DIR = path.join(ROOT, 'learn');
+const BLOG_DIR = path.join(ROOT, 'blog');
 const I18N = path.join(ROOT, 'i18n');
 const RU = path.join(I18N, 'ru');
 const EN = path.join(I18N, 'en');
 const LEARN_RU = path.join(RU, 'docusaurus-plugin-content-docs-learn', 'current');
+const BLOG_RU = path.join(RU, 'docusaurus-plugin-content-blog');
 const MANIFEST = path.join(RU, '.translate-manifest.json');
 
 /**
@@ -88,6 +90,21 @@ The page follows:
 
 `;
 
+const BLOG_PROMPT = `You are translating a blog post from a Flutter and Dart framework's engineering blog from English into Russian.
+
+Return the translated Markdown file and nothing else. No preamble, no code fence around the whole file, no commentary.
+
+1. Keep the front matter block, and inside it translate only \`title\` and \`description\`. \`slug\`, \`authors\`, \`tags\` and \`date\` are addresses and identifiers: change one and the post moves or loses its author. Copy them byte for byte.
+2. Keep the \`<!-- truncate -->\` marker exactly where it is. It decides how much of the post the index page shows, and the build fails without it.
+3. Code blocks, identifiers, file paths and package names are not prose. Translate the comments inside a code block; leave the code itself alone.
+4. This is writing about engineering, addressed to a colleague. Keep it plain and direct — the same register as the English, no formal padding, no "необходимо отметить".
+5. Product and technology names stay as they are: DartWay, Flutter, Serverpod, Dart, pub.dev, GitHub, Telegram, iOS, Android, Web, CRUD, API.
+6. Keep every link exactly as it is, both its address and its position in the sentence.
+
+The post follows:
+
+`;
+
 const JSON_PROMPT = `You are translating interface strings for a Flutter framework's website from English into Russian.
 
 The input is a JSON object mapping a key to an object with \`message\` (the English string) and, usually, \`description\` (where the string appears — context for you, not something to translate).
@@ -118,7 +135,7 @@ async function main() {
   const english = extractEnglishStrings();
   const manifest = force ? {} : readManifest();
 
-  const jobs = [...markdownJobs(english), ...jsonJobs(english)].filter(
+  const jobs = [...markdownJobs(english), ...blogJobs(), ...jsonJobs(english)].filter(
     (job) => !only || job.id.startsWith(only),
   );
 
@@ -211,10 +228,77 @@ function extractEnglishStrings() {
     'docusaurus-plugin-content-docs-learn/current.json': read(
       'docusaurus-plugin-content-docs-learn/current.json',
     ),
+    // The blog's own SEO title and description. Without this the Russian blog
+    // index carries the English ones, which is what search engines read.
+    'docusaurus-plugin-content-blog/options.json': read(
+      'docusaurus-plugin-content-blog/options.json',
+    ),
   };
 
   fs.rmSync(EN, { recursive: true, force: true });
   return strings;
+}
+
+/**
+ * One job per post under blog/.
+ *
+ * Added 06.09.2026. The blog shipped English-only because this function did not
+ * exist, and the counter then said what that cost: `/ru/learn` is the most-read
+ * page on the site and the English `/learn` is not in the top fifteen. Writing
+ * that never reaches Russian reaches almost nobody.
+ *
+ * `authors.yml` and `tags.yml` stay English for now — Docusaurus reads them as
+ * data rather than prose, and translating them needs a YAML job with its own
+ * verification. The tag chips on the Russian blog are therefore still English.
+ */
+function* blogJobs() {
+  if (!fs.existsSync(BLOG_DIR)) return;
+
+  for (const relative of collectMarkdown(BLOG_DIR)) {
+    const source = path.join(BLOG_DIR, relative);
+    const content = readAsLf(source);
+
+    yield {
+      id: `blog/${relative}`,
+      target: path.join(BLOG_RU, relative),
+      hash: hash(content),
+      translate: async () => {
+        const translated = await claude(BLOG_PROMPT + content);
+        verifyUrls(content, translated);
+        verifyTruncate(content, translated);
+        return addNoticeAfterFrontMatter(translated);
+      },
+    };
+  }
+}
+
+/**
+ * The truncate marker decides how much of a post the index shows, and the build
+ * throws without one — `onUntruncatedBlogPosts: 'throw'`. A translation that
+ * dropped it would fail the build rather than the translation, and the error
+ * would point at the Russian file rather than at the run that produced it.
+ */
+function verifyTruncate(source, translated) {
+  const marker = '<!-- truncate -->';
+  if (source.includes(marker) && !translated.includes(marker)) {
+    throw new Error('the translation dropped the <!-- truncate --> marker');
+  }
+}
+
+/**
+ * A blog post's title lives in its front matter, not in an H1, so the notice
+ * goes after the closing `---`. Put before it, it would push the front matter
+ * out of the first line and Docusaurus would stop seeing it at all.
+ */
+function addNoticeAfterFrontMatter(content) {
+  const lines = content.split('\n');
+  if (lines[0].trim() !== '---') return addNotice(content);
+
+  const end = lines.findIndex((line, index) => index > 0 && line.trim() === '---');
+  if (end === -1) return addNotice(content);
+
+  lines.splice(end + 1, 0, '', GENERATED_NOTICE);
+  return `${lines.join('\n')}\n`;
 }
 
 /** One job per page under learn/. */

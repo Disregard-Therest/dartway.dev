@@ -1,0 +1,14 @@
+{
+  "title": {
+    "message": "Блог DartWay",
+    "description": "DartWay Blog"
+  },
+  "description": {
+    "message": "Full-stack Dart в проде: инженерные разборы, кейсы, релизы фреймворка.",
+    "description": "Full-stack Dart in production: engineering writing, case breakdowns, framework releases."
+  },
+  "sidebar.title": {
+    "message": "Свежие посты",
+    "description": "Recent posts"
+  }
+}

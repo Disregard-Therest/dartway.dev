@@ -1,6 +1,8 @@
-# Three sections, from STRATEGY.md stage 4: framework releases, engineering
-# writing, case breakdowns. `onInlineTags: throw` means a post cannot invent a
-# fourth in passing — adding one is a decision made here.
+# The sections from STRATEGY.md stage 4 — framework releases, engineering
+# writing, case breakdowns — plus `ecosystem`, added 06.09.2026 for the strand
+# the YouTube series already runs on: Flutter and Dart themselves rather than
+# our framework. `onInlineTags: throw` means a post cannot invent one in
+# passing; adding a section is a decision made here.
 
 engineering:
   label: Engineering
@@ -16,3 +18,8 @@ release:
   label: Release
   permalink: /release
   description: What shipped in the framework and what it changes for you.
+
+ecosystem:
+  label: Ecosystem
+  permalink: /ecosystem
+  description: Flutter and Dart themselves — releases, breaking changes, tooling.

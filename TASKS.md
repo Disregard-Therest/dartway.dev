@@ -76,11 +76,15 @@ Nothing here can be done from inside the repository.
       navbar item plus `src/localeRoutes.ts` — because `npm run translate` does not know about
       `blog/`.
       First post: *One account, two doors*, from the auth identity work in core 0.12.1.
-- [ ] **Teach the translator about `blog/`.** Until then `/blog` is English-only, and the Russian
-      audience — the larger of the two channels — does not get the writing at all.
-      `tools/translate.mjs` builds one job per page under `learn/`; blog posts need the same, plus a
-      home at `i18n/ru/docusaurus-plugin-content-blog/`. Removing `/blog` from `DEFAULT_LOCALE_ONLY`
-      is the last step, not the first.
+- [x] **The translator knows `blog/`.** Done 2026-09-06, one week after the blog shipped English-only
+      — the counter is what made it urgent, see STRATEGY §7. One job per post, plus the blog's own
+      `options.json` for its SEO strings and the feed titled per locale (the feed is not covered by
+      the plugin's i18n). Two guards on a translated post: every link must survive, and so must the
+      `<!-- truncate -->` marker — losing it fails the build rather than the translation, pointing at
+      the wrong file. `/blog` is out of `DEFAULT_LOCALE_ONLY` and the custom navbar item is gone with it.
+- [ ] **Translate `blog/tags.yml` and `authors.yml`.** The tag chips on the Russian blog are still
+      English. Docusaurus reads both as data rather than prose, so this needs a YAML job with its own
+      verification — a dropped key there breaks a tag page rather than reading badly.
 - [ ] **Stage 4, the rest: the per-channel process.** Release notes, engineering
       writing, case breakdowns — and the source material for social posts.
 - [ ] **Distribution.** pub.dev descriptions, the GitHub README, dev.to, r/FlutterDev. This is how

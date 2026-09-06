@@ -10,5 +10,9 @@
   "item.label.Learn": {
     "message": "Обучение",
     "description": "Learn"
+  },
+  "item.label.Blog": {
+    "message": "Блог",
+    "description": "Blog"
   }
 }
