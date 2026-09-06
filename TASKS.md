@@ -50,6 +50,16 @@ Nothing here can be done from inside the repository.
       discussed with it: every factual claim sourced, every code sample compiled, and the owner's
       own experience for the parts a model cannot invent.
 
+- [ ] **`translate -- --check` flip-flops right after a `translate` run.** Twice now the plain run
+      has said "up to date" and `--check`, seconds later on an unchanged tree, has said the same one
+      source is stale — `i18n/code.json` both times. It cost a failed deploy on 05.09. Run again a
+      minute later and it agrees; three cold runs in a row agree. So the hash the check computes
+      right after a run is not the hash the run just wrote, and the extraction itself is not the
+      culprit: two probes under different PATHs produced identical payloads and the manifest's hash.
+      Suspect something in `write-translations` reading state the previous process had just written.
+      **Until it is understood, run `--check` twice before pushing** — CI runs it once and fails the
+      deploy on the first answer.
+
 ## Later
 
 - [ ] **Search over the docs.** 21 pages is past the point where browsing is comfortable. Either
