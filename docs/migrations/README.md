@@ -15,8 +15,13 @@ update is reading errors instead of instructions.
 
 ## When a note is written
 
-**In the same pull request as the change, and only when a project has work to do.** The test is
-whether an application on the framework, doing nothing wrong, would have to touch its own code:
+**In the same pull request as the change, and only when a project has work to do.** There is no
+exemption: not for work in progress, not for a package nobody has published yet, not for the
+rewrite. A change reaches `master`, so it reaches the projects that follow `master`, and what they
+have to edit is decided by the person who broke it — not by each project on its own.
+
+The test is whether an application on the framework, doing nothing wrong, would have to touch its
+own code:
 
 - a public symbol renamed, removed or given a different signature;
 - a changed default that alters behaviour a project relies on;
@@ -28,36 +33,58 @@ whether an application on the framework, doing nothing wrong, would have to touc
 capability a project may adopt whenever it likes. A note that asks for nothing teaches people to
 skim the ones that do.
 
-`framework-finish` asks for this by name — it is step 5 of that skill, and the reason it is a step
-rather than a habit is that the author of a change is the last person who can see it as a stranger
-would, and the only one who still knows what they broke.
+The `framework-finish` skill asks for this by name, and the reason it is a step rather than a habit
+is that the author of a change is the last person who can see it as a stranger would, and the only
+one who still knows what they broke.
+
+## The version is what delivers the note
+
+A note is shown to a project **below** the version it names — that is the whole of the filtering.
+So a change that writes a note also **moves the version**, in the same pull request:
+
+- **the core family**, in lockstep across the six, including during the rewrite: `0.20.0-dev.1` →
+  `0.20.0-dev.2`. Each `dev.N` is a release to the projects that follow the branch, whatever it is
+  to pub.dev — the family stood at `dev.1` from the day it was set until D-080, which made every
+  note written against it invisible to everyone;
+- **a satellite**, on its own version, by the usual rules (a pending patch in front of a breaking
+  change becomes a minor);
+- **the carets** in `template/` and `example/`, raised with it.
+
+The one journey that gets no note is a project coming from 0.x: it is recreated on the rewrite
+rather than migrated, databases included (D-031). Everything a project does *after* it is on the
+framework is a note's business.
 
 ## The form
 
 ```markdown
 ---
-title: DwCore.init takes its plugins as a list
+title: The web image takes the app's origin as a build argument
 affects:
-  dartway_flutter: "0.8.0"
+  dartway_cli: "0.11.0"
 ---
 
 ## Who is affected
 
-A project that calls `DwCore.init` with named plugin arguments — every project created before
-0.8.0, whether or not it declares plugins of its own.
+A project whose `<project>_flutter/Dockerfile` declares no `ARG DW_BACKEND_URL` — every project
+created before `dartway_cli` 0.11.0. `dartway deploy` passes the app its own origin under that name,
+and Docker drops a build argument the Dockerfile does not declare, without a word.
 
 ## What to change
 
-`dartway_flutter/lib/src/dw_core.dart`, in the app file (`<project>_app.dart`):
+`<project>_flutter/Dockerfile`, before `flutter build web`:
 
-    - DwCore.init(prefs: prefsPlugin, push: pushPlugin);
-    + DwCore.init(plugins: [prefsPlugin, pushPlugin]);
+    + ARG DW_BACKEND_URL
+    + RUN test -n "$DW_BACKEND_URL"
+    - RUN flutter build web --release
+    + RUN flutter build web --release \
+    +     --dart-define="DW_BACKEND_URL=${DW_BACKEND_URL}"
 
 ## How to check
 
-`dart analyze` in the Flutter package: the old form no longer compiles, so a missed call site is
-an error rather than something that surfaces at runtime.
+`dartway deploy check --env <environment> --local`: `web-backend-url` passes.
 ```
+
+(An illustration of the form, not a real note: the version is made up.)
 
 **`affects` is the whole mechanism, so it is checked rather than trusted.** Each key is a package
 name; each value is the version the change lands in, **quoted** — unquoted `0.8` is a YAML number
@@ -71,13 +98,19 @@ no history to diff — and because a version is what a project actually moves.
 
 **A change to `template/` alone is keyed to `dartway_cli`.** The skeleton has no version of its
 own, and a project keeps its copy of what it was created from — so a fix to `template/` reaches
-nobody, and the note is the whole delivery. `dartway_cli` is the right key because the template
-declares it as a dev dependency, which puts it in the lock of every project `dartway create`
+nobody, and the note is the whole delivery. `dartway_cli` is the right key because the skeleton's Flutter
+package declares it as a dev dependency, which puts it in the lock of every project `dartway create`
 produces; name the version being released with the fix.
 
-**File name: `YYYY-MM-DD-slug.md`.** The notes are listed in file-name order, which is the order
-they are applied in by a project that has fallen several releases behind. Two notes landing on one
-day are ordered by their slug — so when one has to come after another, the slugs have to say so.
+**File name: `YYYY-MM-DD-slug.md`.** The notes are listed in the order they are applied in by a
+project that has fallen several releases behind: by the date in the name first, then — for two
+notes of the same day that name a package in common — by the version that package lands at, then
+by file name. The date decides first because two notes can name versions on entirely unrelated
+number lines (a satellite's `0.4.0` beside the family's `0.20.0-dev.2`), where neither is "behind"
+the other in any sense worth sorting by; only same-day notes sharing a package are close enough in
+time for the version to answer "which shipped first". A slug that happens to sort earlier than
+another note from a different day must not be read as "applied first" — the date already settled
+that.
 
 **Write the edit, not the news.** "The auth flow was reworked" is a changelog entry; this file is
 read by someone who has to change a line and wants to know which one. The changelog says what

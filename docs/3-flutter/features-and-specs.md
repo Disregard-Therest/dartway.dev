@@ -29,7 +29,7 @@ lib/app/bookings/
   `app/learning/lesson/lesson_page.dart` is fine, because `learning` is a group and `lesson` is a
   feature.
 
-Nothing is configured. `dartway check` builds this tree from the file system and grades every
+Nothing is configured. `dart run dartway_cli:dartway check` builds this tree from the file system and grades every
 feature, so the model is the folder layout itself rather than a manifest that can disagree with it.
 
 Two rules follow, and the checker enforces both:
@@ -42,8 +42,8 @@ Two rules follow, and the checker enforces both:
 - **importing another feature's `widgets/` or `logic/` is an error** (`forbiddenFeatureImport`). If
   a file in one feature's `logic/` is wanted by three others, it was never that feature's internal.
 
-Not everything is a feature. App-wide infrastructure (routers, analytics, push init, the model
-registry) lives in `lib/core/`; a widget or helper features draw with — extensions on models
+Not everything is a feature. App-wide infrastructure (the `dw` core, the router, the refusal
+catalogue) lives in `lib/core/`; a widget or helper features draw with — extensions on models
 included — lives in `lib/shared/`. And a feature always sits in one of the four zones, never
 outside them: see [the project layout](../1-getting-started/project-layout.md).
 
@@ -52,7 +52,8 @@ outside them: see [the project layout](../1-getting-started/project-layout.md).
 The feature's public widget declares what it is:
 
 ```dart
-class MyBookingsPage extends ConsumerWidget implements DwFeature {
+// example/dartway_example_flutter/lib/app/bookings/my_bookings_page.dart
+class MyBookingsPage extends ConsumerWidget implements DwFeatureWidget {
   const MyBookingsPage({super.key});
 
   @override
@@ -63,29 +64,34 @@ class MyBookingsPage extends ConsumerWidget implements DwFeature {
         'A member checks what they have signed up for, and which visits they '
         'have already reviewed.',
     behaviors: [
-      'Bookings are sorted by session start, the latest first.',
-      'A booking that already has a review is marked as reviewed.',
+      'Bookings are listed newest first, cancelled ones included.',
+      'An active booking of a session that has not started can be cancelled.',
+      'An attended visit can be reviewed once; a reviewed one says thanks.',
+      'A booking made, cancelled, marked attended or reviewed — here or on '
+          'another device — changes the list live.',
       'With no bookings the screen says so instead of showing an empty list.',
+      'While the list loads, three placeholder cards are shown.',
+      'A failed read says so and offers a retry, rather than looking like a '
+          'member with no bookings.',
     ],
     requirements: [
-      'A member sees only their own bookings; staff sees all of them. The '
-          'decision is the server access filter, not this screen.',
+      'A member sees only their own bookings: the request names no one, and '
+          'the server reads the caller\'s.',
     ],
     implementationNotes: [
-      'A review count on the booking model would remove the second read; it is '
-          'kept separate to show the local join is cheap.',
+      'The review travels inside the booking, so the list is one read.',
     ],
   );
 ```
 
-`DwFeature` is an interface with a single getter and no behavior — the widget declares a
+`DwFeatureWidget` is an interface with a single getter and no behavior — the widget declares a
 descriptor, nothing else changes. The point of putting it *here* rather than in a registry or a
 markdown file: a description that lives away from the code drifts on the first edit, silently. The
 compiler does not check it, the checker cannot see it, and the reader — increasingly an agent —
 believes it.
 
 A feature whose entry point is a widget but declares no spec gets a `featureSpecMissing` warning
-from `dartway check`. A feature whose entry point is an extension or a function
+from `dart run dartway_cli:dartway check`. A feature whose entry point is an extension or a function
 (`context.showInviteDialog()`) has nothing to hang a spec on, and the checker leaves it alone.
 
 ## The fields
@@ -114,7 +120,7 @@ line is not rendered" — yes. The moment "works nicely with long titles" appear
 turned back into prose and stops being worth reading.
 
 **`requirements` is what is imposed from outside** — signed-in users only, no price before
-confirmation, works offline. If you can phrase it as an observable action, it is a behavior.
+confirmation, a member sees only their own bookings. If you can phrase it as an observable action, it is a behavior.
 
 **`implementationNotes` is what the code cannot say about itself** — why it is done this way, a trap
 invisible from the outside, a decision someone would otherwise re-open. The name invites a wider
@@ -123,9 +129,9 @@ feature is rewritten?**
 
 - A reason survives — *"the list is not cached: it changes more often than it is read."*
 - A trap survives — *"the server sends the date in UTC, the screen shows it local."*
-- A map of the code does not — *"the list comes from `dw.repo.modelList` and is drawn by a
-  `ListView`."* That is what the code already says, and unlike the code it starts lying the moment
-  someone moves the widget. Nothing checks it: not the compiler, not `dartway check`.
+- A map of the code does not — *"the list comes from `dw.request(ListMyBookings())` and is drawn
+  by a `ListView`."* That is what the code already says, and unlike the code it starts lying the moment
+  someone moves the widget. Nothing checks it: not the compiler, not `dart run dartway_cli:dartway check`.
 
 Which is the whole point of the field. Everything a reader can get by opening the file belongs in
 the file; this list is for what they would otherwise have to re-derive — or get wrong.
@@ -167,8 +173,8 @@ That is the only way such things survive long enough to be dealt with.
 
 `DwFeatureSpec` is not documentation for humans only. It is read at runtime.
 
-`DwFeature.scanMounted()` walks the element tree from the app root and returns the specs of every
-`DwFeature` widget currently **on screen**, deduplicated by id. It scans from the root rather than
+`DwFeatureWidget.scanMounted()` walks the element tree from the app root and returns the specs of every
+`DwFeatureWidget` widget currently **on screen**, deduplicated by id. It scans from the root rather than
 from a `BuildContext` because the interesting question is "what is on this screen", not "what is
 above this widget".
 
@@ -186,11 +192,12 @@ Two consumers use it today:
 
 - **Error reports.** Every `DwErrorReport` carries `context.featureIds`. An alert from a minified
   web build then names the features of the screen where it happened — which is what makes it
-  actionable at all. See [error reporting](../2-core/error-reporting.md).
-- **DartWay Studio.** The app's bridge binding maps mounted specs onto `StudioFeatureInfo` and
-  reports them on connect and on every navigation. Studio renders them live and stores none of it,
-  so there is nothing that can drift from the code; a feature with a non-empty `knownIssues` is
-  flagged in the catalog. See [the Studio bridge](../6-studio/studio-bridge.md).
+  actionable at all. See [error reporting](error-reporting.md).
+- **DartWay Studio.** An app that opens the Studio bridge maps the mounted specs onto
+  `StudioFeatureInfo` (from `dartway_studio_bridge`) and reports them to a connected Studio, which
+  shows what is on the screen from the code itself; `hasKnownIssues` lets it flag a feature with open
+  issues. Neither the example nor the skeleton wires the bridge yet. See
+  [the Studio bridge](../6-studio/studio-bridge.md).
 
 Enumerating *every* feature of a project is not something a running app can do — Dart has no
 reflection, so only mounted widgets are observable. That is a job for static analysis of the

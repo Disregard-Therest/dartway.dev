@@ -199,7 +199,7 @@ const config: Config = {
 
                 { from: '/docs/foundations/architecture', to: '/docs/getting-started/what-is-dartway' },
                 { from: '/docs/foundations/dartway_specials', to: '/docs/getting-started/what-is-dartway' },
-                { from: '/docs/foundations/domain_and_crud', to: '/docs/core/models' },
+                { from: '/docs/foundations/domain_and_crud', to: '/docs/core/data-objects-and-generation' },
                 { from: '/docs/foundations/creating_a_feature', to: '/docs/flutter/features-and-specs' },
                 { from: '/docs/foundations/naming_conventions', to: '/docs/tooling/conventions-checker' },
 
@@ -209,11 +209,25 @@ const config: Config = {
                 { from: '/docs/flutter/navigation', to: '/docs/flutter/features-and-specs' },
                 { from: '/docs/flutter/dartway_specials', to: '/docs/flutter/data-layer' },
 
-                { from: '/docs/server/crud_configs', to: '/docs/core/crud-configs' },
-                { from: '/docs/server/defining_models', to: '/docs/core/models' },
+                { from: '/docs/server/crud_configs', to: '/docs/server/handlers-and-context' },
+                { from: '/docs/server/defining_models', to: '/docs/core/data-objects-and-generation' },
                 { from: '/docs/server/server_initialization', to: '/docs/getting-started/quick-start' },
                 { from: '/docs/server/server_project_structure', to: '/docs/getting-started/project-layout' },
-                { from: '/docs/server/dartway_specials', to: '/docs/core/crud-configs' },
+                { from: '/docs/server/dartway_specials', to: '/docs/server/handlers-and-context' },
+
+                // Pages of the pre-1.0 docs (Serverpod era), live 05.09–14.09 and
+                // replaced when 1.0 dropped Serverpod. Their old targets above broke
+                // the daily docs sync for two weeks, unnoticed.
+                { from: '/docs/core/models', to: '/docs/core/data-objects-and-generation' },
+                { from: '/docs/core/crud-configs', to: '/docs/server/handlers-and-context' },
+                { from: '/docs/core/realtime', to: '/docs/core/channels-and-realtime' },
+                { from: '/docs/core/error-reporting', to: '/docs/flutter/error-reporting' },
+                { from: '/docs/flutter/actions', to: '/docs/flutter/actions-and-refusal-texts' },
+                { from: '/docs/flutter/offline', to: '/docs/flutter/data-layer' },
+                { from: '/docs/server/recurring-jobs', to: '/docs/server/jobs' },
+                { from: '/docs/server/web-routes', to: '/docs/server/routes' },
+                { from: '/docs/server/generic-database-access', to: '/docs/server/database' },
+                { from: '/docs/server/passwords', to: '/docs/server/auth-identity' },
               ],
             },
           ],
