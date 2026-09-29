@@ -25,10 +25,10 @@ function pageContent() {
   return {
     title: 'DartWay',
     description: translate({
-      id: 'landing.meta.description',
+      id: 'landing.meta.description.v2',
       description: 'The meta description of the landing page',
       message:
-        'DartWay is a full-stack Flutter + Serverpod framework for shipping real products faster with stricter architecture and less boilerplate.',
+        'DartWay is an open-source fullstack Dart framework: a Dart server, a Flutter app and one shared contract between them, built to be developed with AI coding agents.',
     }),
     heroTitle: translate({
       id: 'landing.hero.title',
@@ -36,28 +36,24 @@ function pageContent() {
       message: 'Apps in days, not months',
     }),
     heroKicker: translate({
-      id: 'landing.hero.kicker',
-      description: 'Line under the hero headline naming the audience',
-      message: 'for Flutter + Serverpod teams',
+      id: 'landing.hero.kicker.v2',
+      description: 'Line under the hero headline: what the framework is',
+      message: 'Fullstack Dart, built for AI coding agents',
     }),
     heroSubtitle: translate({
-      id: 'landing.hero.subtitle',
+      id: 'landing.hero.subtitle.v2',
       description: 'Landing hero supporting paragraph',
       message:
-        'Strict architecture, generated structure, and ready product primitives so teams can build with less boilerplate and fewer architectural mistakes.',
+        'A Dart server, a Flutter app and one shared contract between them. Your agent writes features into a structure it cannot bend; you review architecture, not glue code.',
     }),
     heroMeta: [
-      translate({
-        id: 'landing.hero.meta.speed',
-        description: 'Hero fact: delivery speed',
-        message: '3-5x faster delivery',
-      }),
       translate({
         id: 'landing.hero.meta.products',
         description: 'Hero fact: how many products shipped',
         message: '10+ shipped products',
       }),
-      'Flutter + Serverpod',
+      'Dart server + Flutter',
+      'Open source · Apache 2.0',
     ],
     primaryCta: translate({
       id: 'landing.cta.docs',
@@ -68,38 +64,41 @@ function pageContent() {
     stats: [
       [
         translate({
-          id: 'landing.stats.architecture.title',
+          id: 'landing.stats.agent.title',
           description: 'Hero stat card title',
-          message: 'Strict architecture',
+          message: 'Start with an agent',
         }),
         translate({
-          id: 'landing.stats.architecture.text',
+          id: 'landing.stats.agent.text',
           description: 'Hero stat card body',
-          message: 'UI, local logic, domain logic, and shared components stay separated by default.',
+          message:
+            'Open an empty folder in Claude Code, Cursor or Codex and ask it to run dartway quickstart. The agent gets the whole setup instruction and brings the project up.',
         }),
       ],
       [
         translate({
-          id: 'landing.stats.core.title',
+          id: 'landing.stats.contract.title',
           description: 'Hero stat card title',
-          message: 'Typed product core',
+          message: 'One contract',
         }),
         translate({
-          id: 'landing.stats.core.text',
+          id: 'landing.stats.contract.text',
           description: 'Hero stat card body',
-          message: 'Models, CRUD rules, filters, and data flows stay explicit across frontend and backend.',
+          message:
+            'Every call, every object and every refusal is a class in a package both sides compile. Nothing else crosses the wire.',
         }),
       ],
       [
         translate({
-          id: 'landing.stats.ai.title',
+          id: 'landing.stats.live.title',
           description: 'Hero stat card title',
-          message: 'AI-friendly codebase',
+          message: 'Live by default',
         }),
         translate({
-          id: 'landing.stats.ai.text',
+          id: 'landing.stats.live.text',
           description: 'Hero stat card body',
-          message: 'Consistent patterns make generation, review, and scaling much more predictable.',
+          message:
+            'A list open on one screen updates when the data changes on the server: no reload, no cache written by hand.',
         }),
       ],
     ],
@@ -184,137 +183,137 @@ function pageContent() {
     services: [
       [
         translate({
-          id: 'landing.services.structure.title',
+          id: 'landing.services.endpoints.title',
           description: 'Feature card title',
-          message: 'Feature-first structure',
+          message: 'No endpoints to write',
         }),
         translate({
-          id: 'landing.services.structure.text',
+          id: 'landing.services.endpoints.text',
           description: 'Feature card body',
           message:
-            'A predictable application layout for features, shared UI, local state, and domain logic.',
+            'Declare a request or a command in the contract, write one handler on the server, watch it in a widget. No route, client method or cache in between.',
         }),
       ],
       [
         translate({
-          id: 'landing.services.pipeline.title',
+          id: 'landing.services.commands.title',
           description: 'Feature card title',
-          message: 'Unified data pipeline',
+          message: 'Safe retries, readable refusals',
         }),
         translate({
-          id: 'landing.services.pipeline.text',
+          id: 'landing.services.commands.text',
           description: 'Feature card body',
           message:
-            'Backend models, API, validation, filters, persistence, and UI lists follow one model-driven flow.',
+            'A retried command runs once. A refusal comes back as a code and is shown in the user’s language.',
         }),
       ],
       [
         translate({
-          id: 'landing.services.primitives.title',
+          id: 'landing.services.primitives.v2.title',
           description: 'Feature card title',
-          message: 'Ready product primitives',
+          message: 'Product basics included',
         }),
         translate({
-          id: 'landing.services.primitives.text',
+          id: 'landing.services.primitives.v2.text',
           description: 'Feature card body',
           message:
-            'Auth, roles, admin flows, CRUD configs, loading states, errors, and real-time updates are built in.',
+            'Sign-in, profiles, roles, an admin panel, a UI kit, push, uploads and background jobs come with the generated project.',
         }),
       ],
       [
         translate({
-          id: 'landing.services.crossplatform.title',
+          id: 'landing.services.cli.title',
           description: 'Feature card title',
-          message: 'Cross-platform delivery',
+          message: 'From create to deploy',
         }),
         translate({
-          id: 'landing.services.crossplatform.text',
+          id: 'landing.services.cli.text',
           description: 'Feature card body',
           message:
-            'One Dart stack for iOS, Android, Web, and operational panels without fragmented architecture.',
+            'dartway create, check and deploy: one CLI for the whole life of a project, and a checker that catches what the analyzer cannot see.',
         }),
       ],
     ],
     proofTitle: translate({
-      id: 'landing.proof.title',
-      description: 'Heading of the reasons-to-switch section',
-      message: 'Why teams switch to DartWay',
+      id: 'landing.proof.title.v2',
+      description: 'Heading of the reasons-to-use section',
+      message: 'Why developers use DartWay',
     }),
     proof: [
       translate({
-        id: 'landing.proof.glue',
-        description: 'Reason to switch',
-        message: 'It removes repeated glue code between models, backend rules, state, and UI.',
+        id: 'landing.proof.glue.v2',
+        description: 'Reason to use',
+        message:
+          'No glue between server and app: the contract is the API, the client and the types at once.',
       }),
       translate({
-        id: 'landing.proof.patterns',
-        description: 'Reason to switch',
+        id: 'landing.proof.agents',
+        description: 'Reason to use',
         message:
-          'It fixes core patterns early, so products do not drift into inconsistent architecture later.',
+          'Agents get the same strict boundaries as engineers, so generated code lands in the right place and review stays about architecture.',
       }),
       translate({
-        id: 'landing.proof.ai',
-        description: 'Reason to switch',
+        id: 'landing.proof.checker',
+        description: 'Reason to use',
         message:
-          'It gives AI and engineers the same boundaries, which makes code generation and review safer.',
+          'Conventions are checked by a tool, not by memory: dartway check reads the whole project and fails when a feature leaves the pattern.',
       }),
       translate({
         id: 'landing.proof.production',
-        description: 'Reason to switch',
-        message: 'It is already validated in production products, not just demo repositories.',
+        description: 'Reason to use',
+        message:
+          'It is already validated in production products, not just demo repositories.',
       }),
     ],
     processTitle: translate({
-      id: 'landing.process.title',
-      description: 'Heading of the adoption steps section',
-      message: 'How teams adopt it',
+      id: 'landing.process.title.v2',
+      description: 'Heading of the getting-started steps section',
+      message: 'How to start',
     }),
     process: [
       [
-        translate({ id: 'landing.process.scaffold.title', description: 'Adoption step name', message: 'Scaffold' }),
+        translate({ id: 'landing.process.install.title', description: 'Getting-started step name', message: 'Install' }),
         translate({
-          id: 'landing.process.scaffold.text',
-          description: 'Adoption step body',
-          message: 'Start from a full-stack DartWay base instead of assembling architecture from scratch.',
+          id: 'landing.process.install.text',
+          description: 'Getting-started step body',
+          message: 'dart pub global activate dartway_cli: the only thing to put on the machine by hand.',
         }),
       ],
       [
-        translate({ id: 'landing.process.define.title', description: 'Adoption step name', message: 'Define' }),
+        translate({ id: 'landing.process.ask.title', description: 'Getting-started step name', message: 'Ask your agent' }),
         translate({
-          id: 'landing.process.define.text',
-          description: 'Adoption step body',
-          message:
-            'Describe models and rules once, then keep frontend and backend aligned through the same system.',
+          id: 'landing.process.ask.text',
+          description: 'Getting-started step body',
+          message: 'dartway quickstart prints the setup instruction into any agent. Say what you want: set up my_app and bring it up.',
         }),
       ],
       [
-        translate({ id: 'landing.process.build.title', description: 'Adoption step name', message: 'Build' }),
+        translate({ id: 'landing.process.contract.title', description: 'Getting-started step name', message: 'Describe the contract' }),
         translate({
-          id: 'landing.process.build.text',
-          description: 'Adoption step body',
-          message:
-            'Ship features through shared patterns, typed APIs, reactive views, and reusable product modules.',
+          id: 'landing.process.contract.text',
+          description: 'Getting-started step body',
+          message: 'A feature starts as a few classes in the shared package. The server handles them, the app watches them.',
         }),
       ],
       [
-        translate({ id: 'landing.process.scale.title', description: 'Adoption step name', message: 'Scale' }),
+        translate({ id: 'landing.process.deploy.title', description: 'Getting-started step name', message: 'Deploy' }),
         translate({
-          id: 'landing.process.scale.text',
-          description: 'Adoption step body',
-          message: 'Grow the product without rewriting the foundation every time the scope expands.',
+          id: 'landing.process.deploy.text',
+          description: 'Getting-started step body',
+          message: 'dartway deploy takes the project to your own Linux server with Docker. The same CLI updates the project when the framework moves on.',
         }),
       ],
     ],
     finalTitle: translate({
-      id: 'landing.final.title',
+      id: 'landing.final.title.v2',
       description: 'Heading of the closing call to action',
-      message: 'Want to evaluate DartWay for your next product?',
+      message: 'Try it on your next project',
     }),
     finalText: translate({
-      id: 'landing.final.text',
+      id: 'landing.final.text.v2',
       description: 'Body of the closing call to action',
       message:
-        'Start with the docs, inspect the architecture, and reach out if you want to discuss adoption or a real product use case.',
+        'Read the docs or hand the quickstart to your agent. Releases, new episodes and questions live in our Telegram channel.',
     }),
     contactCta: translate({
       id: 'landing.cta.telegram',

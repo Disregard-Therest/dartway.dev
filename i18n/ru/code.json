@@ -7,25 +7,21 @@
     "message": "Язык",
     "description": "Language"
   },
-  "landing.meta.description": {
-    "message": "DartWay — full-stack фреймворк на Flutter и Serverpod: реальные продукты выходят быстрее, архитектура строже, шаблонного кода меньше.",
-    "description": "DartWay is a full-stack Flutter + Serverpod framework for shipping real products faster with stricter architecture and less boilerplate."
+  "landing.meta.description.v2": {
+    "message": "DartWay — открытый фуллстек-фреймворк на Dart: сервер на Dart, приложение на Flutter и один общий контракт между ними, рассчитанный на разработку с AI-агентами.",
+    "description": "DartWay is an open-source fullstack Dart framework: a Dart server, a Flutter app and one shared contract between them, built to be developed with AI coding agents."
   },
   "landing.hero.title": {
     "message": "Приложения за дни, а не месяцы",
     "description": "Apps in days, not months"
   },
-  "landing.hero.kicker": {
-    "message": "для команд на Flutter и Serverpod",
-    "description": "for Flutter + Serverpod teams"
+  "landing.hero.kicker.v2": {
+    "message": "Фуллстек на Dart, сделанный под AI-агентов",
+    "description": "Fullstack Dart, built for AI coding agents"
   },
-  "landing.hero.subtitle": {
-    "message": "Строгая архитектура, сгенерированная структура и готовые продуктовые примитивы: меньше шаблонного кода и меньше архитектурных ошибок.",
-    "description": "Strict architecture, generated structure, and ready product primitives so teams can build with less boilerplate and fewer architectural mistakes."
-  },
-  "landing.hero.meta.speed": {
-    "message": "Разработка в 3–5 раз быстрее",
-    "description": "3-5x faster delivery"
+  "landing.hero.subtitle.v2": {
+    "message": "Сервер на Dart, приложение на Flutter и один общий контракт между ними. Агент пишет фичи в структуру, которую не может сломать; вы проверяете архитектуру, а не связующий код.",
+    "description": "A Dart server, a Flutter app and one shared contract between them. Your agent writes features into a structure it cannot bend; you review architecture, not glue code."
   },
   "landing.hero.meta.products": {
     "message": "10+ выпущенных продуктов",
@@ -35,36 +31,36 @@
     "message": "Открыть документацию",
     "description": "Open documentation"
   },
-  "landing.stats.architecture.title": {
-    "message": "Строгая архитектура",
-    "description": "Strict architecture"
+  "landing.stats.agent.title": {
+    "message": "Начните с агента",
+    "description": "Start with an agent"
   },
-  "landing.stats.architecture.text": {
-    "message": "UI, локальная логика, доменная логика и общие компоненты разделены по умолчанию.",
-    "description": "UI, local logic, domain logic, and shared components stay separated by default."
+  "landing.stats.agent.text": {
+    "message": "Откройте пустую папку в Claude Code, Cursor или Codex и попросите выполнить dartway quickstart. Агент получит всю инструкцию по настройке и поднимет проект.",
+    "description": "Open an empty folder in Claude Code, Cursor or Codex and ask it to run dartway quickstart. The agent gets the whole setup instruction and brings the project up."
   },
-  "landing.stats.core.title": {
-    "message": "Типизированное ядро продукта",
-    "description": "Typed product core"
+  "landing.stats.contract.title": {
+    "message": "Один контракт",
+    "description": "One contract"
   },
-  "landing.stats.core.text": {
-    "message": "Модели, правила CRUD, фильтры и потоки данных остаются явными и на фронтенде, и на бэкенде.",
-    "description": "Models, CRUD rules, filters, and data flows stay explicit across frontend and backend."
+  "landing.stats.contract.text": {
+    "message": "Каждый вызов, каждый объект и каждый отказ — это класс в пакете, который компилируют обе стороны. Больше по сети не ходит ничего.",
+    "description": "Every call, every object and every refusal is a class in a package both sides compile. Nothing else crosses the wire."
   },
-  "landing.stats.ai.title": {
-    "message": "Кодовая база, понятная AI",
-    "description": "AI-friendly codebase"
+  "landing.stats.live.title": {
+    "message": "Реалтайм по умолчанию",
+    "description": "Live by default"
   },
-  "landing.stats.ai.text": {
-    "message": "Единообразные паттерны делают генерацию, ревью и масштабирование куда предсказуемее.",
-    "description": "Consistent patterns make generation, review, and scaling much more predictable."
+  "landing.stats.live.text": {
+    "message": "Открытый на экране список обновляется, когда данные меняются на сервере: без перезагрузки и без кэша, написанного руками.",
+    "description": "A list open on one screen updates when the data changes on the server: no reload, no cache written by hand."
   },
   "landing.cases.title": {
     "message": "Продукты на DartWay",
     "description": "Products built with DartWay"
   },
   "landing.cases.footer": {
-    "message": "И ещё десятки готовых сценариев, внутренних инструментов и стартап-релизов на той же основе.",
+    "message": "И ещё десятки выпущенных сценариев, внутренних инструментов и стартап-релизов на той же основе.",
     "description": "And dozens of other shipped flows, internal tools, and startup releases built on the same foundation."
   },
   "landing.cases.tvaity.subtitle": {
@@ -92,7 +88,7 @@
     "description": "Admin panel"
   },
   "landing.cases.tvaity.result": {
-    "message": "Помогли онлайн-школе перенести работу из Telegram и LMS в собственное приложение и создать уникальный опыт обучения для студентов.",
+    "message": "Помогли онлайн-школе перенести работу из Telegram и LMS в собственное приложение и создать для учеников уникальный опыт обучения.",
     "description": "Helped an online school move work from Telegram and LMS into its own application and create a unique learning experience for students."
   },
   "landing.cases.kerla.subtitle": {
@@ -100,7 +96,7 @@
     "description": "Region-specific classified with social elements"
   },
   "landing.cases.kerla.status": {
-    "message": "E-commerce стартап",
+    "message": "E-commerce-стартап",
     "description": "E-commerce startup"
   },
   "landing.cases.fact.listings": {
@@ -124,108 +120,108 @@
     "description": "> 5000 Users"
   },
   "landing.cases.kerla.result": {
-    "message": "Помогли основателю превратить идеи в продукт, выйти на локальный рынок и дальше расширять функциональность.",
+    "message": "Помогли основателю превратить идеи в продукт, запуститься на локальном рынке и продолжать расширять функциональность.",
     "description": "Helped the founder turn ideas into product, launch on a local market, and keep expanding the feature set."
   },
   "landing.services.title": {
     "message": "Что даёт фреймворк",
     "description": "What the framework gives you"
   },
-  "landing.services.structure.title": {
-    "message": "Структура по фичам",
-    "description": "Feature-first structure"
+  "landing.services.endpoints.title": {
+    "message": "Эндпоинты писать не нужно",
+    "description": "No endpoints to write"
   },
-  "landing.services.structure.text": {
-    "message": "Предсказуемая раскладка приложения: фичи, общий UI, локальное состояние и доменная логика.",
-    "description": "A predictable application layout for features, shared UI, local state, and domain logic."
+  "landing.services.endpoints.text": {
+    "message": "Объявите запрос или команду в контракте, напишите один обработчик на сервере, следите за ним в виджете. Никаких роутов, клиентских методов и кэшей между ними.",
+    "description": "Declare a request or a command in the contract, write one handler on the server, watch it in a widget. No route, client method or cache in between."
   },
-  "landing.services.pipeline.title": {
-    "message": "Единый поток данных",
-    "description": "Unified data pipeline"
+  "landing.services.commands.title": {
+    "message": "Безопасные ретраи, понятные отказы",
+    "description": "Safe retries, readable refusals"
   },
-  "landing.services.pipeline.text": {
-    "message": "Модели бэкенда, API, валидация, фильтры, хранение и списки в UI подчиняются одному потоку от модели.",
-    "description": "Backend models, API, validation, filters, persistence, and UI lists follow one model-driven flow."
+  "landing.services.commands.text": {
+    "message": "Повторённая команда выполнится один раз. Отказ возвращается кодом и показывается на языке пользователя.",
+    "description": "A retried command runs once. A refusal comes back as a code and is shown in the user’s language."
   },
-  "landing.services.primitives.title": {
-    "message": "Готовые продуктовые примитивы",
-    "description": "Ready product primitives"
+  "landing.services.primitives.v2.title": {
+    "message": "Продуктовая база в комплекте",
+    "description": "Product basics included"
   },
-  "landing.services.primitives.text": {
-    "message": "Авторизация, роли, админские сценарии, конфиги CRUD, состояния загрузки, ошибки и обновления в реальном времени уже внутри.",
-    "description": "Auth, roles, admin flows, CRUD configs, loading states, errors, and real-time updates are built in."
+  "landing.services.primitives.v2.text": {
+    "message": "Вход, профили, роли, админка, UI-кит, пуши, загрузка файлов и фоновые задачи идут вместе с созданным проектом.",
+    "description": "Sign-in, profiles, roles, an admin panel, a UI kit, push, uploads and background jobs come with the generated project."
   },
-  "landing.services.crossplatform.title": {
-    "message": "Кроссплатформенная разработка",
-    "description": "Cross-platform delivery"
+  "landing.services.cli.title": {
+    "message": "От создания до деплоя",
+    "description": "From create to deploy"
   },
-  "landing.services.crossplatform.text": {
-    "message": "Один стек на Dart для iOS, Android, Web и операционных панелей — без разъезжающейся архитектуры.",
-    "description": "One Dart stack for iOS, Android, Web, and operational panels without fragmented architecture."
+  "landing.services.cli.text": {
+    "message": "dartway create, check и deploy: один CLI на всю жизнь проекта и проверка, которая ловит то, чего не видит анализатор.",
+    "description": "dartway create, check and deploy: one CLI for the whole life of a project, and a checker that catches what the analyzer cannot see."
   },
-  "landing.proof.title": {
-    "message": "Почему команды переходят на DartWay",
-    "description": "Why teams switch to DartWay"
+  "landing.proof.title.v2": {
+    "message": "Почему разработчики выбирают DartWay",
+    "description": "Why developers use DartWay"
   },
-  "landing.proof.glue": {
-    "message": "Он убирает повторяющийся связующий код между моделями, правилами бэкенда, состоянием и UI.",
-    "description": "It removes repeated glue code between models, backend rules, state, and UI."
+  "landing.proof.glue.v2": {
+    "message": "Между сервером и приложением нет связующего кода: контракт — это сразу API, клиент и типы.",
+    "description": "No glue between server and app: the contract is the API, the client and the types at once."
   },
-  "landing.proof.patterns": {
-    "message": "Он фиксирует базовые паттерны сразу, и продукт потом не сползает в разнородную архитектуру.",
-    "description": "It fixes core patterns early, so products do not drift into inconsistent architecture later."
+  "landing.proof.agents": {
+    "message": "Агенты получают те же строгие границы, что и инженеры: сгенерированный код попадает куда надо, а ревью остаётся про архитектуру.",
+    "description": "Agents get the same strict boundaries as engineers, so generated code lands in the right place and review stays about architecture."
   },
-  "landing.proof.ai": {
-    "message": "Он задаёт AI и разработчикам одни и те же границы — генерация и ревью кода становятся безопаснее.",
-    "description": "It gives AI and engineers the same boundaries, which makes code generation and review safer."
+  "landing.proof.checker": {
+    "message": "Соглашения проверяет инструмент, а не память: dartway check читает весь проект и падает, когда фича выходит за пределы паттерна.",
+    "description": "Conventions are checked by a tool, not by memory: dartway check reads the whole project and fails when a feature leaves the pattern."
   },
   "landing.proof.production": {
-    "message": "Он уже проверен на продакшен-продуктах, а не только на демо-репозиториях.",
+    "message": "Это уже проверено на продакшен-продуктах, а не только на демо-репозиториях.",
     "description": "It is already validated in production products, not just demo repositories."
   },
-  "landing.process.title": {
-    "message": "Как команды его внедряют",
-    "description": "How teams adopt it"
+  "landing.process.title.v2": {
+    "message": "Как начать",
+    "description": "How to start"
   },
-  "landing.process.scaffold.title": {
-    "message": "Каркас",
-    "description": "Scaffold"
+  "landing.process.install.title": {
+    "message": "Установка",
+    "description": "Install"
   },
-  "landing.process.scaffold.text": {
-    "message": "Начните с готовой full-stack базы DartWay, а не собирайте архитектуру с нуля.",
-    "description": "Start from a full-stack DartWay base instead of assembling architecture from scratch."
+  "landing.process.install.text": {
+    "message": "dart pub global activate dartway_cli — единственное, что ставится на машину руками.",
+    "description": "dart pub global activate dartway_cli: the only thing to put on the machine by hand."
   },
-  "landing.process.define.title": {
-    "message": "Описание",
-    "description": "Define"
+  "landing.process.ask.title": {
+    "message": "Спросите агента",
+    "description": "Ask your agent"
   },
-  "landing.process.define.text": {
-    "message": "Опишите модели и правила один раз — дальше фронтенд и бэкенд держит в согласии одна система.",
-    "description": "Describe models and rules once, then keep frontend and backend aligned through the same system."
+  "landing.process.ask.text": {
+    "message": "dartway quickstart выводит инструкцию по настройке в любого агента. Скажите, чего хотите: настрой my_app и подними его.",
+    "description": "dartway quickstart prints the setup instruction into any agent. Say what you want: set up my_app and bring it up."
   },
-  "landing.process.build.title": {
-    "message": "Разработка",
-    "description": "Build"
+  "landing.process.contract.title": {
+    "message": "Опишите контракт",
+    "description": "Describe the contract"
   },
-  "landing.process.build.text": {
-    "message": "Выпускайте фичи через общие паттерны, типизированные API, реактивные представления и переиспользуемые модули.",
-    "description": "Ship features through shared patterns, typed APIs, reactive views, and reusable product modules."
+  "landing.process.contract.text": {
+    "message": "Фича начинается с нескольких классов в общем пакете. Сервер их обрабатывает, приложение за ними следит.",
+    "description": "A feature starts as a few classes in the shared package. The server handles them, the app watches them."
   },
-  "landing.process.scale.title": {
-    "message": "Масштабирование",
-    "description": "Scale"
+  "landing.process.deploy.title": {
+    "message": "Деплой",
+    "description": "Deploy"
   },
-  "landing.process.scale.text": {
-    "message": "Растите продукт, не переписывая фундамент каждый раз, когда расширяется объём задач.",
-    "description": "Grow the product without rewriting the foundation every time the scope expands."
+  "landing.process.deploy.text": {
+    "message": "dartway deploy разворачивает проект на вашем Linux-сервере с Docker. Тот же CLI обновляет проект, когда фреймворк уходит вперёд.",
+    "description": "dartway deploy takes the project to your own Linux server with Docker. The same CLI updates the project when the framework moves on."
   },
-  "landing.final.title": {
-    "message": "Хотите оценить DartWay для следующего продукта?",
-    "description": "Want to evaluate DartWay for your next product?"
+  "landing.final.title.v2": {
+    "message": "Попробуйте на следующем проекте",
+    "description": "Try it on your next project"
   },
-  "landing.final.text": {
-    "message": "Начните с документации, посмотрите на архитектуру и напишите нам, если хотите обсудить внедрение или реальный продуктовый кейс.",
-    "description": "Start with the docs, inspect the architecture, and reach out if you want to discuss adoption or a real product use case."
+  "landing.final.text.v2": {
+    "message": "Прочитайте документацию или отдайте quickstart своему агенту. Релизы, новые выпуски и вопросы — в нашем Telegram-канале.",
+    "description": "Read the docs or hand the quickstart to your agent. Releases, new episodes and questions live in our Telegram channel."
   },
   "landing.cta.telegram": {
     "message": "Вступить в Telegram",

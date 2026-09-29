@@ -26,7 +26,7 @@ const TELEGRAM_URL = isDefaultLocale ? 'https://t.me/dartway_dev' : 'https://t.m
 
 const config: Config = {
   title: 'DartWay Framework',
-  tagline: 'Full-stack Dart framework on Flutter + Serverpod',
+  tagline: 'Fullstack Dart framework: a Dart server, a Flutter app and one shared contract',
   favicon: 'favicon.ico',
 
   // Compatibility with the upcoming Docusaurus v4.
@@ -87,9 +87,9 @@ const config: Config = {
         codeRepository: 'https://github.com/dartway/dartway',
         license: 'https://www.apache.org/licenses/LICENSE-2.0',
         description:
-          'A fullstack framework for building an application in one language. Serverpod runs the ' +
-          'server, Flutter runs the client, and DartWay is the layer over both: you declare a model ' +
-          'and configure who may do what with it, instead of writing an endpoint per operation.',
+          'A fullstack framework for building an application in one language. The server is Dart ' +
+          'over Postgres, the app is Flutter, and between them sits a shared contract both sides ' +
+          'compile: every call, object and refusal is a class, and no endpoint is written by hand.',
         author: { '@type': 'Person', name: 'Evgenii Novikov' },
       }),
     },
