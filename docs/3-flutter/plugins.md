@@ -84,7 +84,7 @@ client reads the stored session — and the bootstrap runs `dw.init()` before th
 DwAppRunner(
   appInitializers: [dw.init],
   supportedLocales: AppLocalizations.supportedLocales,
-  child: const ExampleApp(),
+  child: const DartwayExampleApp(),
 ).run();
 ```
 

@@ -21,11 +21,15 @@ The framework ships no button. It ships the mechanisms a button would otherwise 
 ## `dw.action` returns a value, not a callback
 
 ```dart
+// example/dartway_example_flutter/lib/app/schedule/logic/schedule_commands.dart
+static Future<DwCallResult<SessionBooking>> book(ClubSession session) =>
+    dw.command(BookSession(sessionId: session.id));
+
 // example/dartway_example_flutter/lib/app/schedule/widgets/session_card.dart
 AppButton.primary(
   l10n.book,
   onTap: dw.action(
-    (_) => dw.command(BookSession(sessionId: session.id)),
+    (_) => ScheduleCommands.book(session),
     onSuccessNotification: l10n.youAreBooked,
   ),
 )
@@ -86,7 +90,7 @@ with no notification.
 ```dart
 // example/dartway_example_flutter/lib/admin/users/widgets/admin_users_table.dart
 dw.action(
-  (_) => dw.command(ChangeRole(profileId: user.id, role: role)),
+  (_) => UsersCommands.changeRole(user, role),
   label: 'changeUserRole',
   confirmation: DwUiConfirmation(
     context.l10n.confirmChangeRole(displayName, context.l10n.roleName(role.name)),
@@ -110,7 +114,7 @@ DwActionBuilder(
   action: deleteAction,
   builder: (context, onPressed, busy) => ListTile(
     onTap: onPressed,
-    trailing: busy ? const CircularProgressIndicator() : const Icon(Icons.delete),
+    trailing: busy ? const AppProgressIndicator(size: 20) : const Icon(Icons.delete),
   ),
 )
 ```
@@ -131,9 +135,7 @@ rewritten. The app's kit button wraps it (`lib/ui_kit/theme/app_button.dart`); s
 AppButton.primary(
   l10n.continueAction,
   requireValidation: true,
-  onTap: dw.action(
-    (_) => dw.command(UpdateMyProfile(firstName: name.value.trim())),
-  ),
+  onTap: dw.action((_) => ProfileNameCommands.saveName(name.value)),
 )
 ```
 
@@ -187,7 +189,7 @@ refusalText: (refusal) => refusalText(appL10n, refusal),
 What this shape buys:
 
 - **every code has a sentence, checked by the compiler.** Each `_…Text` is an exhaustive `switch` over
-  its enum — the project's `<Project>Refusal` (an enum `with DwRefusalCodes`) and the framework's
+  its enum — the project's `<Package>Refusal` (an enum `with DwRefusalCodes`) and the framework's
   `DwCoreRefusal`, `DwAuthRefusal`, `DwUploadRefusal`. A code added on either side does not compile
   until it has a text;
 - **a code nobody knows still reads as a sentence.** A newer server can send a code this build has

@@ -92,19 +92,19 @@ class UpdateRequiredPage extends ConsumerWidget {
           return Scaffold(
             body: Center(
               child: Padding(
-                padding: const EdgeInsets.all(32),
+                padding: const EdgeInsets.all(AppSpace.s32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const AppIconView(AppIcon.brandMark, size: 64),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpace.s24),
                     AppText.title(
                       updateRequired
                           ? l10n.updateRequiredTitle
                           : l10n.serverMismatchTitle,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpace.s12),
                     AppText.body(
                       updateRequired
                           ? l10n.updateRequiredBody
@@ -135,8 +135,8 @@ page is already the message.
 
 ## Proven by
 
-- `example/dartway_example_flutter/test/app/update_required_test.dart` and the last test of
-  `template/dartway_starter_flutter/test/auth/sign_in_test.dart`: a fake server whose contract moved
+- `example/dartway_example_flutter/test/core/update_required_page_test.dart` and the last test of
+  `template/dartway_starter_flutter/test/auth/auth_page_test.dart`: a fake server whose contract moved
   to a newer breaking line answers the app, which is mounted through `DwAppBootstrapper` exactly as the
   runner mounts it; the client reports `dw.updateRequired`, "Update the app" is on screen, and nothing
   of the app is.

@@ -21,7 +21,7 @@ DwWindowListView<ChatMessage>(
   controller: session.list,           // DwWindowListController<ChatMessage>
   initialAnchor: session.openAnchor,  // the read position, or null for the newest
   anchorAlignment: 0.3,
-  padding: EdgeInsets.fromLTRB(10, hasPinned ? ChatPinnedBar.height + 8 : 8, 10, 12),
+  padding: EdgeInsets.fromLTRB(AppSpace.s10, hasPinned ? ChatPinnedBar.height + AppSpace.s8 : AppSpace.s8, AppSpace.s10, AppSpace.s12),
   onVisibleItemsChanged: tracker.seen,
   emptyBuilder: (context) => Center(child: AppText.body(l10n.sayHiToTeam)),
   itemBuilder: (context, row) => ChatMessageRow(row: row, session: session),
@@ -58,13 +58,17 @@ list another key to open it elsewhere.
 
 Older and newer items load when fewer than `loadTriggerExtent` (1.5) heights of the list remain beyond
 the loaded ones. The slot past an end that has more is `edgeBuilder(context, edge, error, retry)` —
-`edge` is a `DwWindowListEdge` (`older` or `newer`); by default 48 pixels holding a small progress
-indicator, or a retry button after a failed load. **Keep its height constant**: it stands between the
+`edge` is a `DwWindowListEdge` (`older` or `newer`); by default 48 pixels holding the app's
+`readLoadingBuilder`, or a retry button after a failed load. **Keep its height constant**: it stands between the
 rows on screen and the rows a load brings.
 
-Before the first answer `loadingBuilder` is shown, when the first answer is not data `errorBuilder`
-(with a `retry`), and while the window has no items `emptyBuilder` — replaced by the list, at its
-newest end, when an item arrives live.
+The first answer is shown as [`DwReadBuilder`](data-layer.md#showing-a-read-dwreadbuilder) shows a
+read: the app's `readLoadingBuilder` before it, an `onRefused` branch for a refusal code it names,
+the app's `readFailedBuilder` (with a retry) for anything else short of data. While the window has
+no items the required `emptyBuilder` is shown — replaced by the list, at its newest end, when an
+item arrives live. The edge slot's default is the same as
+[`DwPagedListView`](data-layer.md#feeds-dwpages)'s: the app's `readLoadingBuilder` while a load
+runs, a retry after a failed one.
 
 ## New items arriving live
 
@@ -134,7 +138,7 @@ command (`example/dartway_example_flutter/lib/app/chat/logic/chat_session.dart`)
 - `packages/dartway_core_flutter/test/dw_window_list_view_test.dart` — opens at the newest line without
   reversing; older lines loaded above keep the first visible line within a pixel; scrolled up, new lines
   move nothing and are counted; opening at an anchor; scrolling to an unloaded line reopens the window.
-- `example/dartway_example_flutter/test/app/chat_test.dart` — the chat opens under the unread divider and
+- `example/dartway_example_flutter/test/app/chat/staff_chat_page_test.dart` — the chat opens under the unread divider and
   marks read what comes on screen, a new message scrolled up is counted on the arrow, the pinned bar and
   a search reach a message far back in the history.
 

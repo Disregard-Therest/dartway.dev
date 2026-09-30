@@ -81,20 +81,20 @@ How long a resolved token is trusted without a query is a server setting, not an
 - `DwToolOrigin()` — `DwAccountService.ensure`: a seed, an admin bootstrap, an import. It has
   accepted nothing on anyone's behalf.
 
-The skeleton's `AppAuth.createProfile` (`template/dartway_starter_server/lib/src/core/auth.dart`) shows why the
+The skeleton's `ProfileChanges.create` (`template/dartway_starter_server/lib/src/profile/profile_changes.dart`), which the sign-in hook calls, shows why the
 difference matters:
 
 ```dart
 switch (origin) {
   case DwSignInOrigin(:final registration):
-    if (!await AppAuth.isSignUpEnabled(ctx.db)) {
+    if (!await AccountAuth.isSignUpEnabled(ctx.db)) {
       ctx.refuse(DartwayStarterRefusal.signUpClosed, field: 'identifier');
     }
     if (registration[RegistrationKeys.terms] != 'true') {
       ctx.refuse(DartwayStarterRefusal.consentsRequired, field: 'consents');
     }
     return ctx.db.userProfiles.insert(
-      UserProfileRow(
+      NewUserProfileRow(
         accountId: accountId,
         firstName: registration[RegistrationKeys.firstName]?.trim() ?? '',
         agreedForMarketing:
@@ -105,7 +105,7 @@ switch (origin) {
     );
   case DwToolOrigin():
     return ctx.db.userProfiles.insert(
-      UserProfileRow(accountId: accountId, createdAt: now),
+      NewUserProfileRow(accountId: accountId, createdAt: now),
     );
 }
 ```
@@ -126,7 +126,7 @@ verified e-mail match (`linkByVerifiedEmail`, below) rather than a confirmed cod
 
 The framework publishes nothing about identifiers. The skeleton republishes the profile, which
 shows identifiers read from the framework; the example mirrors the phone into its profile row in
-the same transaction (`example/dartway_example_server/lib/src/core/example_auth.dart`).
+the same transaction (`example/dartway_example_server/lib/src/account/logic/auth.dart`).
 
 ## Built-in commands
 
@@ -265,7 +265,7 @@ DwAppServer(
   auth: DwAuthConfig(
     ...,
     onExternalAccountCreated: (ctx, accountId, provider, subject, data) =>
-        AppAuth.createProfile(ctx, accountId, data),
+        ProfileChanges.create(ctx, accountId, data),
   ),
 );
 ```
@@ -422,7 +422,7 @@ Three ways to get one, by where the code runs:
 - `ctx.accounts` in a handler, job or route — writes join the call's transaction, and revoked
   sessions close after it commits;
 - `ctx.accounts` in a **startup step** — the first administrator, in the step's transaction
-  ([app server](app-server.md#startup-steps));
+  ([app server](app-server.md#startup-steps-and-seeds));
 - `server.accounts` next to a running server;
 - `DwAccountService(db, auth)` over a bare database, where no server runs in the process. Its hooks
   get a context whose `publish`, `revoke` and `jobs` throw rather than drop what they are given

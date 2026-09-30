@@ -53,23 +53,31 @@ enum DartwayStarterUpload with DwUploadPurpose {
 (`template/dartway_starter_shared/lib/src/dartway_starter_upload.dart`: the server's rule and the
 app's picker read the same limits.)
 
-The server declares one `DwUploadRule` per purpose. From
-`template/dartway_starter_server/lib/src/core/files.dart`:
+The server declares one `DwUploadRule` per purpose, in the `_access.dart` of the feature the purpose
+belongs to — the avatar is the profile's. From
+`template/dartway_starter_server/lib/src/profile/profile_access.dart`:
 
 ```dart
-// AppFiles
-static List<DwUploadRule> get uploadRules => [
-  DwUploadRule(
-    DartwayStarterUpload.avatar,
-    // Shown to anyone who sees the member, by URL: a photo is not private.
-    visibility: DwFileVisibility.public,
-    maxBytes: DartwayStarterUpload.avatarMaxBytes,
-    contentTypes: DartwayStarterUpload.avatarContentTypes,
-    // Any member. The command that puts a photo on a profile checks it is the
-    // caller's own finished upload (`ctx.files.requireOwned`).
-    canUpload: (ctx) async => true,
-  ),
-];
+// ProfileAccess
+/// A profile photo: shown to anyone who sees the member, by URL — a photo is
+/// not private.
+static final avatarUpload = DwUploadRule(
+  DartwayStarterUpload.avatar,
+  visibility: DwFileVisibility.public,
+  maxBytes: DartwayStarterUpload.avatarMaxBytes,
+  contentTypes: DartwayStarterUpload.avatarContentTypes,
+  // Any member. The command that puts a photo on a profile checks it is the
+  // caller's own finished upload (`ctx.files.requireOwned`).
+  canUpload: (ctx) async => true,
+);
+```
+
+The server's library lists every purpose's rule, as it lists the features — the one file that sees
+them all, since `core/` imports no feature:
+
+```dart
+// DartwayStarterServer
+static List<DwUploadRule> get uploadRules => [ProfileAccess.avatarUpload];
 ```
 
 | Field | Meaning |
@@ -99,12 +107,14 @@ prefix's.
 
 Who reads a private file is `DwFileStorage.canRead(ctx, DwFileRecord file)`. Without it, only the
 uploader. A `false` answers `dw.forbidden` to a signed-in caller and `401` to an anonymous one, who
-may be allowed after signing in. The example lets chat members read chat attachments
-(`example/dartway_example_server/lib/src/core/example_files.dart`):
+may be allowed after signing in. The example lets chat members read chat attachments: the chat
+answers for its own files (`ChatAttachments.canRead` in
+`example/dartway_example_server/lib/src/chat/chat_access.dart`, `null` for a file of another
+purpose), and the server's library asks each feature in turn:
 
 ```dart
-// ExampleFiles
-static Future<bool> canRead(DwCallContext ctx, DwFileRecord file) async =>
+// DartwayExampleServer
+static Future<bool> canReadFile(DwCallContext ctx, DwFileRecord file) async =>
     await ChatAttachments.canRead(ctx, file) ?? file.accountId == ctx.accountId;
 ```
 
@@ -143,12 +153,11 @@ probe say whether it is right. The skeleton's `bin/server.dart` provisions when
 ## Configuration
 
 ```dart
-// AppFiles
-static DwFileStorage storage(DwFileStorageConfig config) =>
-    DwFileStorage(config, rules: uploadRules);
+// DartwayStarterServer.build
+files: storage == null ? null : DwFileStorage(storage, rules: uploadRules),
 ```
 
-passed as `DwAppServer(files: …)` (`template/dartway_starter_server/lib/src/core/files.dart`).
+passed as `DwAppServer(files: …)` (`template/dartway_starter_server/lib/dartway_starter_server.dart`).
 
 `DwFileStorageConfig`:
 
@@ -165,9 +174,12 @@ passed as `DwAppServer(files: …)` (`template/dartway_starter_server/lib/src/co
 
 `DwFileStorageConfig.fromEnvironment(env, {prefix: 'DW_STORAGE_'})` reports every missing or
 malformed key at once. Which buckets are needed is the rules' business, so neither is required
-there; the server names the missing one at startup. The skeleton's `AppFiles.storageConfig` fills in
-development defaults — bucket names after the project, the public base URL on the endpoint — and
-answers `null` without `DW_STORAGE_ENDPOINT`, so the server runs without uploads.
+there; the server names the missing one at startup. A project does not call it itself:
+`DwServerEnvironment.read` does, in the project's `AppEnvironment`
+([configuration](app-server.md#configuration-comes-from-the-environment)), and fills in development
+defaults — the bucket names the project passes (the skeleton's `AppFiles.defaultPublicBucket` and
+`defaultPrivateBucket`, named after the project), the public base URL on the endpoint — and answers
+`null` without `DW_STORAGE_ENDPOINT`, so the server runs without uploads.
 
 `DwFileStorage`:
 
@@ -206,16 +218,16 @@ DwCallHandler.command<UpdateMyProfile, UserProfile>(
   access: DwAccessRule.signedIn,
   handle: (ctx, command) async {
     final current = (await ctx.db.userProfiles.findById(
-      (await ctx.profile).id!,
+      (await ctx.profile).id,
       lock: DwRowLock.forUpdate,
     ))!;
     final previousAvatar = current.avatarFileId;
     final avatar = command.avatarFileId;
-    if (avatar case DwSetField(:final value)) {
+    if (avatar.newValue case final fileId?) {
       // Only the caller's own finished avatar upload: a file id is a number
       // anyone can type.
       await ctx.files.requireOwned(
-        value,
+        fileId,
         DartwayStarterUpload.avatar,
         field: 'avatarFileId',
       );
@@ -223,12 +235,7 @@ DwCallHandler.command<UpdateMyProfile, UserProfile>(
     final updated = await ctx.db.userProfiles.update(
       current.copyWith(
         firstName: command.firstName?.trim(),
-        lastName: switch (command.lastName) {
-          DwSetField(:final value) when value.trim().isEmpty =>
-            const DwFieldPatch.clear(),
-          DwSetField(:final value) => DwFieldPatch.set(value.trim()),
-          final other => other,
-        },
+        lastName: command.lastName.trimmedOrCleared,
         gender: command.gender,
         avatarFileId: avatar,
       ),
@@ -238,7 +245,7 @@ DwCallHandler.command<UpdateMyProfile, UserProfile>(
     if (previousAvatar != null && previousAvatar != updated.avatarFileId) {
       await ctx.files.delete(previousAvatar);
     }
-    return AppPublications.profile(ctx, updated);
+    return ProfilePublications.profile(ctx, updated);
   },
 ),
 ```
@@ -257,7 +264,7 @@ authority rather than the caller's — **no `canRead` or `canUpload` is asked**:
 final bytes = await ctx.files.read(fileId);               // null: no confirmed file
 final link = await ctx.files.readLink(fileId);            // a short link another service can fetch
 final made = await ctx.files.store(
-  AppUpload.progressCard,
+  AcmeUpload.progressCard,
   accountId: profile.accountId,
   bytes: png,
   contentType: 'image/png',

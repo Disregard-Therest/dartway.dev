@@ -44,22 +44,38 @@ my_app_shared/
   lib/my_app_shared.dart         the library: re-exports dartway_core_shared and everything below
   lib/generated/dw_protocol.dart the protocol registry — generated
   lib/src/
-    profile.dart, admin.dart,    data objects, requests and commands, grouped by area;
-    settings.dart                each with its generated *.dw.dart part
+    profile.dart, admin.dart,    one file per feature of the server, named after its folder:
+    settings.dart, account.dart  data objects, requests and commands, and the rules both sides
+                                 apply (account.dart: the identifier's one form, the sign-up
+                                 keys); each with its generated *.dw.dart part when it
+                                 declares data objects
     my_app_channel.dart          enum MyAppChannel with DwChannelKind — the live channels
     my_app_refusal.dart          enum MyAppRefusal with DwRefusalCodes — why the server says no
     my_app_upload.dart           enum MyAppUpload with DwUploadPurpose — what a file is for
-    auth_identifier.dart         rules both sides apply identically
-    registration_keys.dart       the keys a sign-up sends with its code
-  test/contract_test.dart
+    my_app_protocol.dart         the protocol both sides speak: the generated one and the modules'
+  test/my_app_shared_test.dart
 ```
+
+**`lib/src/` mirrors the server's features** — a law, held by `dart run dartway_cli:dartway check`
+(`invalidSharedLayout`). The contract of the server's `profile/` is `src/profile.dart`; when it
+grows, it becomes a flat folder `src/profile/` of parts only, `profile_<part>.dart`, each a group of
+DTOs — a data object with the requests and commands that answer it (`chat_messages.dart`), never
+exactly a layer (`chat_models.dart`) — and no `profile/profile.dart` beside them, where everything
+without a part would collect. A name is a feature folder of the server, letter for letter, so "where
+is the contract of this feature" has one answer, and a DTO goes where its handler is. **The shared
+package has no `core/`**: what exists only in the contract — a rule both sides apply, the keys a
+sign-up sends — goes with the feature that owns it. Beside the features sit only the package-wide
+files named after the package: `_channel`, `_refusal`, `_upload`, `_protocol` and, with push,
+`_push_category`. `lib/` itself holds the library, which re-exports and declares nothing,
+`generated/`, which holds only what the generator writes, and `src/`.
 
 **It depends on `dartway_core_shared` and nothing else.** Whatever it declares is compiled into the
 server and into the app alike, so it cannot reach for Flutter, a database or IO. A rule that needs the
 database is not a shared rule — it is a handler's.
 
-The three enums are named after the project — `<Project>Channel`, `<Project>Refusal`,
-`<Project>Upload` — so a project's own codes never read as the framework's.
+The three enums are named after the shared package — `my_app_shared` declares `MyAppChannel`,
+`MyAppRefusal`, `MyAppUpload`, the prefix taken mechanically from the package's name — so a project's
+own codes never read as the framework's, and no two projects spell the rule differently.
 
 ## `my_app_server` — where the rules live
 
@@ -69,16 +85,16 @@ my_app_server/
   bin/migrate.dart         apply | rollback | status | create <name> | check | rehash
   bin/seed_dev.dart        development accounts and data; refuses to run twice
   lib/my_app_server.dart   builds the DwAppServer: protocol, schema, migrations, auth,
-                           the features, files
+                           the features, every upload purpose's rule — the one file
+                           that sees every feature
   lib/generated/
     dw_schema.dart         the schema and the db.<table> getters — generated
   lib/src/
-    core/                  the server-wide wiring
-      auth.dart            DwAuthConfig: code delivery, the profile made with each account
-      call_context.dart    what "the caller" means to this app: ctx.profile, the access rules
+    core/                  what every feature imports, and which imports no feature:
+                           fixed names, App* classes
       channels.dart        the channels handlers publish to
-      files.dart           one DwUploadRule per upload purpose
-      bootstrap.dart       the admin role granted to the first administrator (DwFirstAdministrator)
+      environment.dart     the configuration, read once at start
+      files.dart           the storage's default bucket names
     migrations/            migrations.dart and one file per migration — written by
                            migrate.dart create, then yours
     profile/               a feature: everything of one area of the app, in one folder
@@ -87,6 +103,20 @@ my_app_server/
       profile_handlers.dart one DwCallHandler per request and command
       profile_objects.dart rows → the data objects clients see, related data in batches
       profile_publications.dart what a change publishes, and to whom
+      profile_jobs.dart    its job kinds and definitions, when it has jobs
+      profile_access.dart  its access rules, when they outgrow the handlers
+      profile_routes.dart  its DwHttpRoute doors, when it has them
+      profile_changes.dart how another feature writes its rows — the one place their
+                           invariants are kept, a change published through its own
+                           publications
+      logic/               everything else the feature needs, flat, when it needs it
+    profile/               in the skeleton, the sink every feature imports: its
+                           profile_access.dart is what "the caller" means to this app
+                           (ctx.profile, the role rules, the avatar's upload rule), its
+                           profile_changes.dart every write of a profile from outside
+    account/               the feature at the top: the sign-in hooks (logic/auth.dart —
+                           code delivery, the profile made with each account) and the
+                           first administrator, made at every start
     admin/, settings/      the skeleton's other features, the same shape
   test/                    acceptance tests on a real server, database and storage
   docker-compose.yaml      development Postgres and RustFS
@@ -95,13 +125,85 @@ my_app_server/
 
 **`lib/src/` is folders: `core/`, `migrations/`, and one per feature** — a law, held by `dartway
 check` as the Flutter package's top level is. A feature's folder holds everything of its area — its
-rows, handlers, objects, publications, jobs and rules, in files named after it, and in subfolders
-when it grows — and declares itself in `<feature>_feature.dart` as a `DwServerFeature` the server
-lists. No file sits at the top of `src/`, and no folder there is named for a layer (`handlers/`,
-`rows/`, `entities/`, `domain/`, `objects/`, `services/`): a feature split across layers lives in
+rows, handlers, objects, publications and jobs, each in a file of its kind (below) — and
+declares itself in `<feature>_feature.dart` as a `DwServerFeature` the server
+lists. No file sits at the top of `src/`, and no folder anywhere under it is named for a layer (the
+list is below): a feature split across layers lives in
 four places, and a project that grew that way ended with a `chat/` beside a `domain/chat/` and two
 rules for who is in a chat. `src/migrations/migrations.dart` is a fixed name — `bin/migrate.dart`
 writes and reads migrations by that path.
+
+**Inside a feature the file set is closed**, so that one question has one answer in every
+project. A feature folder `<feature>/` holds:
+
+- files named `<feature>_<kind>.dart`, the kind one of `feature`, `rows`, `handlers`, `objects`,
+  `publications`, `jobs`, `access`, `routes`, `changes` — exactly one `<feature>_feature.dart`, the rest when the
+  feature has them;
+- `<feature>_<part>_<kind>.dart` when a kind outgrows one file — `orders_refunds_handlers.dart` beside
+  `orders_handlers.dart`. This is the only way a feature splits;
+- one optional subfolder, `logic/`, for everything that is none of the kinds: a client of an
+  outside service, a calculator, the rules of a domain. Names inside it are free, but none ends in
+  a kind (`logic/send_handlers.dart` is a handlers file in hiding), and it is **flat**: logic that
+  needs folders of its own is a feature too big for one folder, and it splits into features, or
+  into `<part>` files.
+
+No other subfolder, and no folder anywhere under `src/` — `core/` included — named for
+a layer: `domain`, `rows`, `handlers`, `services`, `models`, `objects`, `repositories`, `utils`,
+`helpers`, `entities`, `publications` (`invalidServerFeatureFile`).
+
+**And each kind is held by what the file declares**, not by its name alone
+(`misplacedServerCode`):
+
+| Declared | Only in |
+|---|---|
+| a handler — `DwCallHandler.…(`, a `<DwCallHandler>[…]` list | `*_handlers.dart` |
+| a row class — `@DwSqlTable`, `extends DwTableRow` | `*_rows.dart` |
+| a job — `DwQueuedJob`, `DwRecurringJob`, a `DwJobKind` constructed | `*_jobs.dart` |
+| a route — `DwHttpRoute.…(`, a `<DwHttpRoute>[…]` list | `*_routes.dart` |
+| `DwServerFeature(` | `<feature>_feature.dart` |
+| a publication — a named function, method or closure-holding field that calls `ctx.publish(`, in closures it runs too (`forEach`, `transaction`) — but not in a hook it hands to a constructor by name (`DwAuthConfig(onAccountCreated: …)`) | `*_publications.dart` |
+| a mapping — a named function, method or closure-holding field that takes a row (a `…Row` parameter, or a member of a row class or of an extension on one), returns a data object of the shared package, and builds one | `*_objects.dart` |
+
+`core/` holds none of them. What is not a declaration is not judged: a handler or a sign-in hook
+publishing inline (`ctx.publish` inside its closure) is a call, not a publication, and a mapping
+written as a closure inside a handler is not seen — keep it in `_objects` anyway, since that is
+where the next reader looks for it.
+
+**A file is held to the app's length, in the server and the shared package alike**: over 200 lines
+is a nudge (`fileLong`), over 350 a warning (`fileTooLong`). Passed over: generated code (named so
+and carrying the generator's header), migrations, and the server's seed data — a file of nothing
+but `const`s, each a row draft or a collection of drafts for a `DwSeedRows` step, so a catalogue of
+hundreds of rows sits in a `<feature>_<part>_rows.dart` of its own. Tests are not
+measured; a long one splits by scenario (`<feature>_<scenario>_acceptance_test.dart`).
+
+**Features import each other one way, through a surface, and write only their own rows** — four
+errors of `dart run dartway_cli:dartway check`,
+so that "who defines this" has one answer:
+
+- **`core/` imports no feature** (`coreImportsFeature`). Every feature imports `core/`; a feature
+  `core/` imported would be imported by every feature, itself included. So who the caller is —
+  `ctx.profile` and the role rules — is the profile feature's (`profile/profile_access.dart`), each
+  upload purpose's rule is in the `_access.dart` of the feature it belongs to, and the sign-in hooks
+  are `account/`, the one feature above those an account's life touches. `lib/my_app_server.dart`
+  assembles them and is not judged; nothing under `src/` imports it.
+- **No cycles** (`featureImportCycle`), counting every import. Two features that import each other
+  are one feature in two folders: neither can be read, tested or removed alone, and a rule each
+  needs from the other ends up written in both — a project that grew that way had chat membership
+  defined in four places. The profile is the graph's sink: every feature asks who the caller is,
+  so the profile imports no other feature.
+- **A feature imports another only through its surface** (`featureImportOutsideSurface`): its
+  `_rows` (to read and join its tables), its `_access` (its rules — whose row, who is a member, one
+  function per concept), its `_objects` (its rows as it shows them), its `_publications` (its
+  changes as it announces them) and its `_changes` (its rows written the one way that keeps their
+  invariants), and their `<part>` files. Never its `_feature`, `_handlers`, `_jobs`, `_routes` or
+  `logic/`: those run the feature, and another feature running them is where a concept gets a
+  second definition.
+- **A row is written only by the feature that owns its invariants** (`foreignRowWrite`). Its
+  `_rows` are read by anyone who imports them, but `ctx.db.<table>.insert`, `update`, `delete`,
+  `upsert` of another feature's table fails, from a feature or from `core/`: the writer calls the
+  owner's `_changes` instead. The skeleton's admin panel changes a role through
+  `ProfileChanges.changeRole`, and its sign-in hook creates the profile through
+  `ProfileChanges.create`: one definition of a valid profile.
 
 **A row is not a data object.** `UserProfileRow` is a table; `UserProfile` is what a client receives.
 The server builds one from the other in `profile_objects.dart` — the profile's phone and e-mail come from
@@ -110,7 +212,7 @@ own use never reaches a client by accident.
 
 **Accounts are the framework's, profiles are yours.** The framework keeps accounts, sign-in identifiers
 and session keys in its own tables; `UserProfileRow` references the account and is created in the
-same transaction, by `onAccountCreated` in `auth.dart`. A signed-in account without a profile cannot
+same transaction, by `onAccountCreated` in `account/logic/auth.dart`. A signed-in account without a profile cannot
 exist, and nothing about who a person is to your app lives in the framework.
 
 ## `my_app_flutter` — where the app is
@@ -130,10 +232,10 @@ my_app_flutter/lib/
   common/                features more than one zone draws on (create it when that happens)
 
   LAYERS — everything that is not a feature
-  core/                  app-wide wiring: dw_core.dart, router/, refusal_text.dart,
-                         update_required_page.dart, profile/, app_settings/, dev/
-  shared/                building blocks: widgets and helpers with no story of their own
-  ui_kit/                your design system, as source
+  core/                  app-wide wiring: dw_core.dart, router/ (with the zones' shells),
+                         refusal_text.dart, update_required_page.dart, profile/, dev/
+  shared/                non-visual helpers several features use: extensions, formatters
+  ui_kit/                your design system, as source — styles and every visual building block
   l10n/                  ARB files and their generated output
 ```
 
@@ -173,8 +275,9 @@ internals; any other subfolder is read as a nested feature.
 
 A feature has exactly one root file, and no feature imports another feature's `widgets/` or `logic/`.
 Behaviour two features share is one more feature; a widget with no story of its own is a building
-block in `lib/shared/`. The entry point declares what it is in a `DwFeatureSpec` beside its code —
-see [features and specs](../3-flutter/features-and-specs.md).
+block in `lib/ui_kit/`. The entry point — and no other file of the feature — declares what it is in a
+`DwFeatureSpec` beside its code, and a feature sends its commands from its `logic/` — see [features
+and specs](../3-flutter/features-and-specs.md).
 
 ### Why the kit is source in your app, not a dependency
 
@@ -189,9 +292,12 @@ a `part of` `ui_kit.dart`, and the rest of the app imports that file and nothing
 
 The boundary is enforced by `dartway_lints`, an analyzer plugin: raw `Color(...)`, `TextStyle(...)`,
 `BorderRadius` and direct theme access **outside** `ui_kit/` are flagged, because a style that leaks
-into a feature is a style nobody can change centrally. The same package limits a relative import to
-two levels up (`deep_relative_import`): past that the path names nothing, and a `package:` import says
-where it goes. See [the UI kit](../3-flutter/ui-kit.md).
+into a feature is a style nobody can change centrally. Spacing is the kit's too: a gap or an inset
+outside it is an `AppSpace` token. See [the UI kit](../3-flutter/ui-kit.md).
+
+**Imports in `lib/` are `package:` only**, in all three packages — `dart run dartway_cli:dartway check`
+fails a relative one (`relativeImport`) and `--fix` rewrites it. Under `test/`, the harness in
+`test/support/` is imported relatively, since `package:` cannot reach it.
 
 ### `web/index.html` is part of the app
 

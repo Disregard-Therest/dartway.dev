@@ -35,13 +35,13 @@ caller's own screens up to date, the publication everyone else's
 The owner, timestamps, status, storage keys — a handler derives those from its context, never from a
 field the client filled in. `BookSession` carries the session id; who books is `ctx.profile`, and
 the booking's status and time are set by the handler
-(`example/dartway_example_server/lib/src/club/booking_handlers.dart`). A command with an
+(`example/dartway_example_server/lib/src/bookings/bookings_handlers.dart`). A command with an
 `accountId` field is a command any signed-in user can send with someone else's.
 
 ## Validation runs on both sides
 
 A command (or a request) that implements `DwSelfValidating` checks its own fields
-(`example/dartway_example_shared/lib/src/news.dart`):
+(`example/dartway_example_shared/lib/src/content.dart`):
 
 ```dart
 final class PublishNews extends DwActionCommand<NewsPost>
@@ -55,9 +55,9 @@ final class PublishNews extends DwActionCommand<NewsPost>
   @override
   List<DwCallRefusal> validate() => [
     if (title.trim().isEmpty)
-      DwCallRefusal(ExampleRefusal.titleRequired, field: 'title'),
+      DwCallRefusal(DartwayExampleRefusal.titleRequired, field: 'title'),
     if (text.trim().isEmpty)
-      DwCallRefusal(ExampleRefusal.textRequired, field: 'text'),
+      DwCallRefusal(DartwayExampleRefusal.textRequired, field: 'text'),
   ];
 }
 ```
@@ -109,20 +109,20 @@ first, whose token nobody received, is listed and revocable
 
 ```dart
 DwCallHandler.command<PublishNews, NewsPost>(
-  access: ExampleAccess.staff,
+  access: ProfileAccess.staff,
   handle: (ctx, command) async {
     final me = await ctx.profile;
     final row = await ctx.db.newsPosts.insert(
-      NewsPostRow(
-        authorProfileId: me.id!,
+      NewNewsPostRow(
+        authorProfileId: me.id,
         title: command.title.trim(),
         text: command.text.trim(),
-        createdAt: DateTime.now(),
+        createdAt: ctx.now,
       ),
     );
-    final post = (await ClubObjects.news(ctx.db, [row], author: me)).single;
-    ctx.publish(_news, post);
-    await ctx.publishAdminCounters();
+    final post = (await ContentObjects.news(ctx.db, [row], author: me)).single;
+    ctx.publish(AppChannels.news, post);
+    await AdminPublications.counters(ctx);
     return post;
   },
 ),

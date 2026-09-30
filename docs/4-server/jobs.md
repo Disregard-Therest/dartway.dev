@@ -11,12 +11,14 @@ and are claimed by exactly one worker even when several processes run.
 
 A job has two halves. **What it is** — its name and how its payload travels as JSON — is a
 `DwJobKind<P>`, a constant the places that enqueue it import. **How it runs** is a `DwQueuedJob<P>`
-in the server's job list, often built from a service instance the enqueuing code never sees:
+in the job list of the feature it belongs to, often built from a service instance the enqueuing code
+never sees. Both live in the feature's `<feature>_jobs.dart`:
 
 ```dart
-abstract final class InvoiceJobs {
+// lib/src/invoices/invoices_jobs.dart
+abstract final class InvoicesJobs {
   static const send = DwJobKind<({int invoiceId})>(
-    'invoice.send',
+    'invoices.send',
     encode: _encode,
     decode: _decode,
   );
@@ -26,23 +28,28 @@ abstract final class InvoiceJobs {
       (invoiceId: json['invoiceId']! as int);
 }
 
-final invoiceJobs = <DwJobDefinition>[
+final invoicesJobs = <DwJobDefinition>[
   DwQueuedJob(
-    InvoiceJobs.send,
+    InvoicesJobs.send,
     handle: (ctx, p) async => ctx.log.info('sending invoice ${p.invoiceId}'),
   ),
   DwRecurringJob(
-    'invoice.markOverdue',
+    'invoices.mark_overdue',
     every: const Duration(hours: 1),
-    handle: (ctx) => ctx.db.execute(
-      'UPDATE invoice SET overdue = true '
-      'WHERE due_at < now() AND paid_at IS NULL AND NOT overdue',
+    handle: (ctx) => ctx.db.invoices.updateWhere(
+      where: (t) =>
+          t.dueAt.lt(ctx.now) & t.paidAt.isNull() & t.overdue.equals(false),
+      set: (t) => [t.overdue.set(true)],
     ),
   ),
 ];
 ```
 
-passed as a feature's `DwServerFeature(jobs: invoiceJobs)`.
+passed as that feature's `DwServerFeature(jobs: invoicesJobs)` — there is no app-wide job list. The
+kinds' class is `<Feature>Jobs`, the list `<feature>Jobs`, and a job's name
+`'<feature>.<snake_case>'`. The
+example's `bookings/bookings_jobs.dart` is a worked one: `BookSession` enqueues a reminder two hours
+before the session, and the job decides when it runs whether the booking is still active.
 
 **`DwJobKind<P>(name, {encode, decode})`** — the one place a payload is spelled as a map: `encode`
 runs at the enqueue, `decode` before the handler, and both sides see `P` (a record, a class, `int`).
@@ -76,13 +83,13 @@ Future<bool> enqueue<P>(
   String? key,
 });
 
-await ctx.jobs.enqueue(InvoiceJobs.send, (invoiceId: invoice.id!));
+await ctx.jobs.enqueue(InvoicesJobs.send, (invoiceId: invoice.id));
 ```
 
 - The row is written through `ctx.db`, so **an enqueue joins the enclosing transaction**: inside a
   transactional command the job exists only if the command commits, and a refusal or a failure
   leaves no job behind. Outside a transaction it is written at once.
-- `runAt` schedules it; now when omitted.
+- `runAt` schedules it, an instant — `ctx.now.add(…)`; `ctx.now` when omitted.
 - `key` deduplicates: while a job with the same key is pending or running, another enqueue with it
   does nothing and answers `false`. A job that ran out of attempts no longer blocks its key. Once a
   job has **succeeded** its row is gone, so the key is free again — idempotence for work that must
@@ -99,8 +106,36 @@ twice. It wakes on a `LISTEN`/`NOTIFY` signal sent when a job is enqueued (deliv
 the next due time, and at least every `jobPollInterval` in case a notification was lost.
 `jobWorkers: 0` runs no jobs in that process.
 
-The context of a job has no caller: `accountId` and `sessionKey` are `null`. It may publish; a
-transactional job's publications are delivered after it commits.
+The context of a job has no caller: `accountId`, `sessionKey` and `callerUtcOffset` are `null`. It
+may publish; a transactional job's publications are delivered after it commits.
+
+### Time is the server's clock
+
+Every due time of the queue — a job's default `runAt`, whether it is due, its retry after a failure,
+a non-transactional job's lease, a recurring job's next run — is read from the server's clock
+(`DwAppServer(clock: …)`), the same one a job's handler reads as `ctx.now`; not from the database's
+`now()`. A job is due exactly when `ctx.now` says so.
+
+In a test that is the point: with a `DwTestClock`, moving the clock makes due whatever it passed and
+wakes the workers, so a reminder queued for tomorrow runs now, and its handler sees tomorrow:
+
+```dart
+final clock = DwTestClock(DateTime.utc(2026, 9, 29, 8));
+// … the server built with `clock: clock`, a session booked for tomorrow at 10:00 …
+clock.moveTo(DateTime.utc(2026, 9, 30, 10, 5)); // the queue fell behind
+// the reminder runs, sees the session already started, and sends nothing
+```
+
+The example's `test/src/core/push_test.dart` does exactly this. A clock that stands still has a
+consequence: a retry after its backoff, a non-transactional job's expired lease and a recurring
+job's next run wait until the test moves the clock past them. What the framework stamps in the
+database itself — `created_at`, session keys and sign-in codes with their expiry, command outcomes —
+stays on the database's clock and keeps real time.
+
+Modules that queue work of their own keep it on the same clock: push deliveries are due, leased,
+retried and finished by it ([push delivery](push-delivery.md)), so the job covering a delivery never
+runs before the delivery is due. A clock of a project's own is a `DwServerClock` — `now()`, and
+`jumps`, the event a server wakes its job executor on.
 
 ### Transactional jobs (the default)
 

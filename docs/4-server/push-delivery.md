@@ -15,7 +15,7 @@ sides read), and the app half — [Push notifications](../3-flutter/push-notific
 
 ```dart
 // app_shared — the project's categories, and the protocol both sides speak
-enum AppPushCategory with DwPushCategory { news, bookings }
+enum AcmePushCategory with DwPushCategory { news, bookings }
 
 final appProtocol = DwWireProtocol(dwPushProtocolEntries, include: appGeneratedProtocol);
 ```
@@ -45,7 +45,7 @@ DwAppServer(
 `dw.push.deliver` and the recurring job `dw.push.cleanup`. The server refuses to start when the
 protocol does not register the push calls, when a project answers them itself, or when a setting
 cannot work. The example reads its providers from the environment
-(`example/dartway_example_server/lib/src/core/example_push.dart`). A project's migration CLI replays the
+(`example/dartway_example_server/lib/src/core/push.dart`). A project's migration CLI replays the
 namespace beside the framework's:
 
 ```dart
@@ -68,9 +68,9 @@ await ctx.push.send(
     data: NewsAlert(id: post.id),       // a data object of the protocol: the app receives it typed
     link: '/news',                      // the in-app path a tap opens; the web opens it too
   ),
-  category: AppPushCategory.news,
+  category: AcmePushCategory.news,
   dedupKey: 'news:${post.id}',
-  scheduledAt: tomorrowAtNine,          // optional: now
+  scheduledAt: tomorrowAtNine,          // optional: ctx.now
   lifetime: const Duration(hours: 6),   // optional: DwPushSettings.messageLifetime
 );                                      // → how many deliveries were queued
 ```
@@ -95,6 +95,12 @@ when there is none.
 
 ## Who receives it, and when: eligibility
 
+The rule reads the project's own rows — a consent on the profile, a member's notification settings —
+so it belongs to the feature that owns them, in its `_access.dart`; `core/` imports no feature, and
+the project's push module takes it as a required parameter (the example's
+`AppPush.module(eligibility: ProfileAccess.pushEligibility)`): a module built without it would send
+news to members who never agreed to it.
+
 ```dart
 Future<Map<int, DwPushDecision>> appPushEligibility(
   DwCallContext ctx,
@@ -104,9 +110,9 @@ Future<Map<int, DwPushDecision>> appPushEligibility(
   final settings = await ctx.db.notificationSettings.find(where: (t) => t.accountId.inList(accountIds));
   return {
     for (final s in settings)
-      if (!s.allows(notice.categoryIn(AppPushCategory.values)))
+      if (!s.allows(notice.categoryIn(AcmePushCategory.values)))
         s.accountId: DwPushDecision.skip
-      else if (s.quietUntil(DateTime.now()) case final end?)
+      else if (s.quietUntil(ctx.now) case final end?)
         s.accountId: DwPushDecision.delayUntil(end),
   };
 }
@@ -157,7 +163,10 @@ continuation, so other jobs get the executor in between.
 **Coverage.** Every pending delivery is due no earlier than some pending job: `send` enqueues one
 at the scheduled time, and a run that moves a delivery later (a retry, a delay) enqueues one at the
 earliest such time in the same transaction. Several runs may drain at once; they claim different
-rows. Should a delivery job run out of attempts on database failures (which alerts),
+rows. The invariant holds on **one clock**, the server's: a delivery is scheduled, claimed, leased,
+retried and finished by `ctx.now`, the clock its job becomes due by — on two clocks a job could run
+before the delivery it covers is due, claim nothing, and leave it uncovered. Should a delivery job
+run out of attempts on database failures (which alerts),
 `dw.push.cleanup` finds work overdue by more than a lease, logs it and queues a run.
 
 **Exactly once.** A device is sent a delivery only by the run holding its lease, and the lease
@@ -218,12 +227,21 @@ and RuStore's send API, records what it was sent and answers what the test says.
 
 ```dart
 final fcm = await DwFakePushService.start();
-final server = await DwTestServer.start(buildServer(push: ExamplePush.module(providers: [fcm.fcmProvider()])));
+final server = await DwTestServer.start(buildServer(
+  push: AppPush.module(
+    providers: [fcm.fcmProvider()],
+    eligibility: ProfileAccess.pushEligibility,
+  ),
+));
 // ...
 fcm.answer = (send) => DwFakePushAnswer.fcmError(404, 'NOT_FOUND', 'Requested entity was not found.', fcmCode: 'UNREGISTERED');
 ```
 
-The example's `test/push_acceptance_test.dart` publishes a post and checks who is notified. The
+On a server with a `DwTestClock`, a scheduled push is sent when the test moves the clock to its
+time, and a retry runs once the clock passes its backoff — while the clock stands, neither happens.
+
+The example's `test/src/core/push_test.dart` publishes a post and checks who is notified, and
+sends a booking's reminder by moving the clock. The
 package's own suites run on Postgres: an enqueue rolled back with its command, dedup, eligibility
 skip and delay, four workers draining 200 deliveries without a duplicate, provider failures
 recorded with their text and retried with backoff, an invalid token removing only its transport's
