@@ -7,6 +7,8 @@
  * `/blog/*` was English-only for one week, until the translator learned the
  * section on 06.09.2026. It is listed here in the history rather than in the
  * array: the rule it needed was the same one, and the fix was to remove it.
+ * `/privacy` is English-only: a legal page, and the translator does not read
+ * markdown pages in src/pages/.
  *
  * Two places need to know that and must not learn it separately: the navbar
  * language switch, and the hreflang tags in src/theme/SiteMetadata. A page
@@ -19,7 +21,7 @@
 export const RU_PREFIX = '/ru';
 
 /** Route prefixes built only under the default locale. */
-const DEFAULT_LOCALE_ONLY = ['/docs'];
+const DEFAULT_LOCALE_ONLY = ['/docs', '/privacy'];
 
 /** The path with its locale prefix removed — i.e. the English URL of a page. */
 export function stripLocale(pathname: string, currentLocale: string): string {
