@@ -173,7 +173,18 @@ testWidgets('the app name comes from the server settings, and a name saved '
 ```
 
 (`template/dartway_starter_flutter/test/app/home/home_page_test.dart`.) `stop` waits out notifications,
-unmounts the app, disposes the core and asserts `server.errors` is empty.
+unmounts the app, disposes the core and asserts both `server.errors` and unaccounted application
+error reports are empty. The app factory routes the existing `DwFlutterConfig.onErrorReport` hook
+to the harness while preserving its normal reporting behavior. The harness also captures Flutter
+errors through `FlutterError.onError` and `PlatformDispatcher.onError` until cleanup finishes, then
+restores both hooks even if teardown assertions fail. `DwRefusalException` and
+`DwNotAuthenticatedException` reports are normal outcomes and are excluded from incident checks.
+
+An error-path test can assert a captured `DwErrorReport` and account for that exact report with
+`app.consumeErrorReport(report)`. The report must have been received by this harness; unrelated
+reports still fail `stop`. Most screens keep the cheap fake timing defaults, including an immediate
+cache release. A cache or navigation lifecycle test passes `clientOptions: const DwClientOptions()`
+to `TestApp.start` to use the production client's one-second release delay.
 
 **Settle by short pumps, not `pumpAndSettle`.** A loading indicator animates for as long as it is on
 screen, so settling by frames waits out the timeout instead of the traffic.
@@ -183,7 +194,7 @@ screen, so settling by frames waits out the timeout instead of the traffic.
 The order the setup brief (`dartway quickstart`) gives an agent, from the project root:
 
 ```bash
-(cd <project>_flutter && dart run dartway_cli:dartway generate --check)
+(cd <project>_flutter && dart run dartway_cli:dartway generate --check --contract-base <trusted-SHA>)
 (cd <project>_flutter && dart run dartway_cli:dartway test)
 (cd my_app_shared && dart test)
 (cd my_app_flutter && flutter test)
@@ -257,3 +268,9 @@ an encoding without bumping the protocol version fails it (D-052): an app built 
 format is then answered `426` and shows "update the app" instead of failing to decode. After a deliberate
 bump, refresh the recordings with `DW_UPDATE_GOLDENS=1 dart test test/wire_golden_test.dart`. See
 [The wire and versions](../2-core/wire-and-versions.md).
+
+The generated project contract gate is separate from the core wire golden. CI passes its trusted
+base SHA to `generate --check`/`check --contract-base`; regeneration cannot silently approve a breaking
+DTO edit. Fixture tests exercise old/new generated codecs and real CLI/Git baselines, including
+read-only project byte identity and blocking unsupported/bootstrap failures. Tooling metadata alone
+does not trigger a core wire bump or runtime interoperability tier.

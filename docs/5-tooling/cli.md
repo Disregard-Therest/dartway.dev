@@ -61,7 +61,7 @@ So a CLI that has the framework beside it hands out the template and the toolkit
 revision: activated from a checkout ahead of `stable`, `dartway create` makes a project of that
 checkout rather than of whatever `stable` holds. A CLI with nothing beside it — installed from
 pub.dev — takes the channel. The install prints which source it used and records it in
-`.claude/dartway-toolkit.json`.
+`.agents/dartway-toolkit.json`.
 
 | Variable | Meaning |
 |---|---|
@@ -110,7 +110,7 @@ one-time code, profiles and roles, navigation with zone guards, an admin panel, 
 tests on both sides, and no domain models. The full application on the same framework lives in
 `example/` and is a reference to read, not a project to inherit.
 
-You get `my_app_shared`, `my_app_server` and `my_app_flutter`, the agent toolkit in `.claude/`
+You get `my_app_shared`, `my_app_server` and `my_app_flutter`, the agent toolkit in `.agents/` and the selected `.claude/` integration
 and `docs/dev_notes/`, and a git repository with an initial commit.
 
 What the copy does beyond copying:
@@ -165,7 +165,7 @@ whatever assistant you use to bring the project up. The manual sequence is in th
 dartway setup-ai --base-branch develop
 ```
 
-Installs the agent toolkit into the project: `.claude/CLAUDE.md`, the `dartway-*` skills, the
+Installs the agent toolkit into the project: `.agents/DARTWAY.md`, the `dartway-*` skills, the
 `/commit` and `/dartway-checkup` commands, a merged `.claude/settings.json`, and
 `docs/dev_notes/`. What each of those is, and which files the installer owns, is
 [The agent toolkit](agent-toolkit.md).
@@ -177,6 +177,7 @@ guess.
 
 | Option | Default | Meaning |
 |---|---|---|
+| `--agent` | `both` | Install `codex`, `claude` or `both`; later installs preserve the recorded choice |
 | `--base-branch` | `master` | Base branch of **this** project, used by the commit and PR instructions |
 | `--language` | `English` | The language the project writes its own texts in. Package APIs and error strings stay English |
 | `--notes-tracker` | `dartway/dartway` | Where framework findings are filed; `none` keeps them in the project |
@@ -184,7 +185,7 @@ guess.
 | `--local-repo` | `DARTWAY_MONOREPO_DIR` | A local checkout instead of a clone |
 
 **An explicit flag wins, what the project recorded comes next, the default comes last.** The install
-records its provenance and settings in `.claude/dartway-toolkit.json` — source, channel, commit, CLI
+records its provenance and settings in `.agents/dartway-toolkit.json` — source, channel, commit, CLI
 version, and the three settings above — and a re-run without `--base-branch`, `--language` or
 `--notes-tracker` replays the recorded ones. Without that, a plain re-run would reset a project's
 language and tracker, and the diff would look like any update.
@@ -196,49 +197,82 @@ in the command that ran. A named local checkout ignores the channel and records 
 refused. The checkout the CLI runs from is a default like `stable`, and is refused the same way for a
 project that recorded a channel: `--channel <recorded>` stays, `--local-repo <checkout>` switches.
 
-Commit `.claude/` and `docs/dev_notes/` afterwards.
+Commit `.agents/`, selected `.claude/` files, root instruction blocks and `docs/dev_notes/` afterwards.
 
 ## `dartway update` — carry the project onto a newer framework
 
-`setup-ai` installs the toolkit. `update` does that and then answers the question nothing else in a
-project answers: **what else has moved.** It takes the same options, with one difference: the
-channel defaults to the one the project recorded, because "update" means moving forward on the
-channel the project is on.
+Plan the update before editing the project:
 
-It reports three things and changes only the first:
+```bash
+dartway update --plan --channel master
+dartway update --plan --target <full-commit-sha> --channel master
+dartway update --target <full-commit-sha> --channel master
+```
 
-- **the toolkit**, installed as `setup-ai` installs it;
-- **the framework packages the project is behind on** — the version each `dartway_*` package
-  resolves in the project's `pubspec.lock` files against the version in the channel's
-  `packages/*/pubspec.yaml`. Only packages the project depends on are listed. When a project holds
-  several copies of a package (a Flutter lock and a server lock), the **lowest** is the answer: the
-  oldest half is the one still owing the migrations. A hosted package moves by raising its caret
-  (under a `0.x` major a minor behaves like a major, so `^0.4.0` does not admit `0.8.0`); a git one
-  moves by `dart pub upgrade <names>` in the directories the report names;
-- **the migration notes still to apply** — the files of `docs/migrations/` in the channel whose
-  `affects:` names a package the project is below, oldest first, each with its path. A note that
-  cannot be parsed is reported as a framework defect rather than skipped. See
-  [Migration notes](../migrations/README.md).
+`--plan` is read-only for the project: no toolkit, plugin configuration, lock or migration state
+is written. It selects an exact committed framework tree and reports its SHA, package gaps and
+unconfirmed migration notes with their instructions. Only committed files are used, including
+with `--local-repo`; uncommitted framework edits are excluded. Later runs use the printed full
+40-character SHA through `--target`, which is required for any write. Keep the same source options
+and installer choices. A moving channel cannot change what that target contains.
 
-If the CLI itself is older than the `dartway_cli` in the channel, the run says so first: an old CLI
-installs an old idea of what a project needs, and it cannot replace itself mid-run.
+The channel defaults to the recorded toolkit channel. Installer options match `setup-ai`, including
+`--agent codex|claude|both`, language, base branch and tracker; recorded choices and owner rules are
+preserved. `--local-repo` selects a local source. If the running CLI is older than the target's CLI,
+the report says so.
 
-**It edits nothing but the toolkit, deliberately.** A caret is one line, a changed API is not, and a
-command that half-applied the rest would leave a tree nobody can tell from a finished one. The
-`dartway-update` skill carries the list out: read the notes, make the edits, then move the versions,
-in that order.
+Package gaps compare current locks with target versions; they are **dependency information, not
+migration completion**. A lock already at target still has unconfirmed notes. Without locks, declared
+framework dependencies still select notes. Notes remain keyed to their existing `affects:` package
+versions and are bounded by the target's versions. Unreadable notes stop the update explicitly.
+
+**No verified records means an unknown migration baseline.** Review relevant notes even if the
+project was recently created, dependencies were raised by hand, or its toolkit was just installed.
+The CLI never converts toolkit provenance or lock versions into completed notes. Older notes can
+be verified as already satisfied or not applicable; that requires an explicit disposition.
+
+Before installing or editing `analysis_options.yaml`, the CLI resolves the proposed `dartway_lints`
+dependency through pub in a temporary package, including its transitive analyzer constraints.
+Hosted pins are raised only when resolvable; existing git and path choices are retained and checked.
+Diagnostic settings stay unchanged in the plugin configuration; only its dependency source is
+passed to pub, using the native analyzer's dependency YAML form. Choose exactly one `version`,
+`git` or `path` source. A custom `hosted` URL must be a
+string alongside `version`. Ambiguous or invalid native source forms fail before installation,
+because pub and the native analyzer can otherwise select different sources from the same map.
+An unpublished plugin version, invalid source or resolution failure returns a nonzero exit code
+and leaves project files untouched. Choose a resolvable hosted target or project-owned git/path
+configuration. `--framework-path` supplies a local plugin path when adding a missing plugin; it
+preserves an existing source choice. Pub cache activity occurs outside the project.
+
+After successful preflight, `update --target` installs the selected toolkit integrations and applies
+the planned lint configuration edit. It edits no application code, bumps no dependencies and completes
+no migration notes. The `dartway-update` skill guides the project edits, regeneration and verification.
+
+Record each note only after checking its edits or applicability:
+
+```bash
+dartway update --target <sha> --channel master --complete docs/migrations/<note>.md --verified --verification "Checks run and actual results"
+dartway update --target <sha> --channel master --not-applicable docs/migrations/<note>.md --verified --verification "Inspected usage and why this project is unaffected"
+```
+
+These completion commands write only `.dartway/migrations.json`. They require explicit verification
+and evidence, and preserve all other records. Repeat a flag to record a verified batch; invalid or
+conflicting selections write nothing. The ledger stores note path, package-version metadata,
+`applied` or `not-applicable`, verification evidence, exact target and verification time. Commit it
+with the update. Partial completion and repeated planning retain every outstanding note; there is
+no implicit fully-migrated baseline or bulk version marker. See [Migration notes](../migrations/README.md).
 
 ## `dartway generate` — the generated code
 
 ```bash
 cd <project>_flutter
 dart run dartway_cli:dartway generate            # write
-dart run dartway_cli:dartway generate --check    # write nothing; exit 1 when a generated file is out of date or stale
+dart run dartway_cli:dartway generate --check --contract-base <trusted-SHA>  # read-only freshness and compatibility
 dart run dartway_cli:dartway generate -v         # list every file written or removed
 ```
 
 Runs `dartway_generator` over the project: DTO codecs (`*.dw.dart` parts) and the protocol registry
-(`lib/generated/dw_protocol.dart`) in `*_shared`, table definitions and the schema
+(`lib/generated/dw_protocol.dart`) and sorted `lib/generated/dw_contract.json` in `*_shared`, table definitions and the schema
 (`lib/generated/dw_schema.dart`) in `*_server`. What is generated from what is
 [Data objects and generation](../2-core/data-objects-and-generation.md).
 
@@ -247,13 +281,12 @@ pins an `analyzer`, and a globally activated CLI carrying it would force one ana
 project it touches — while the generator has to match the `dartway_core_shared` and `dartway_orm`
 the project builds against. So the command walks up to the directory holding the `*_server` and
 `*_shared` packages, looks for `dartway_generator` in their package config (the server package
-first, where the skeleton declares it as a dev dependency), and runs `dart run dartway_generator`
-there. Only when no package resolves it does it fall back to a globally activated
+first, where the skeleton declares it as a dev dependency), and launches its resolved entry point directly with the server package config. Only when no package resolves it does it fall back to a globally activated
 `dartway_generator`; without either it stops and says how to add one. Run `dart pub get` first: an
 unresolved package has no package config to find the generator in.
 
 The exit code is the generator's. `--check` is what CI runs, and what `dart run dartway_cli:dartway check` reports as
-`generatedCodeStale`.
+`generatedCodeStale` and `projectContractVersion`.
 
 ## `dartway check` — the conventions, enforced
 
@@ -394,3 +427,13 @@ Files, total lines, average, maximum and minimum per top-level folder of the Flu
 `lib/` whose name starts with `app`, `auth`, `common` or `admin`, plus a total. No grades and no
 opinions: the counter you read before and after a refactor. Run it from the project root or inside
 the `*_flutter` package.
+
+`generate` and `check` accept `--contract-base <revision>`, resolved once to a reported commit SHA.
+`generate --check` defaults to the project base-branch merge-base; CI explicitly supplies its trusted
+base revision. Generation with a baseline refuses incompatible/unverified results before writing.
+Generation without a baseline only emits artifacts; it makes no compatibility claim.
+The CLI launches the already-resolved generator with its package config directly, avoiding implicit
+pub resolution or lock edits during checks. Resolve dependencies separately first.
+Generator exit 1 means stale output or a generation error, exit 3 means a contract incompatibility
+or unverified comparison. CLI `check` exposes the latter as error-severity `projectContractVersion`
+and exits 1. See [the codec-based rules and strict bootstrap](../2-core/wire-and-versions.md#the-generated-project-contract-gate).
