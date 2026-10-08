@@ -4,7 +4,9 @@
 
 A migration is Dart code in the server package that moves the schema one step — carrying the rows
 already there across it, when it must. The project's migrations live in `lib/src/migrations/`, one file each, registered in
-`lib/src/migrations/migrations.dart`. The server applies them when it starts; `bin/migrate.dart`
+`lib/src/migrations/migrations.dart`. `create` writes package imports in that index, using the name
+from the nearest `pubspec.yaml` and the directory's path under `lib/`; directories outside `lib/`
+use relative imports. The server applies them when it starts; `bin/migrate.dart`
 applies, rolls back, inspects and drafts them.
 
 Migrations are code rather than a diff computed at deploy time because only a person knows whether
@@ -79,6 +81,13 @@ months against the schema of its own day. It describes tables with schema litera
 `dropForeignKey`, `addUnique`, `dropUnique`, `createIndex`, `dropIndex`, and `sql` / `query` for
 everything else. A `backfill` is an SQL expression computed for each existing row: the column is
 added nullable, filled and then made `NOT NULL`, in the migration's transaction.
+
+`DwCalendarDay` maps to PostgreSQL `date`. Adopting it for a new field is optional and needs no
+framework migration. If a project chooses to convert an existing `timestamptz` field, the project
+owns that schema change and must name the civil zone in its `USING` expression, for example
+`(starts_at AT TIME ZONE 'America/Los_Angeles')::date`; the selected zone decides which day each
+instant becomes. The framework does not rewrite timestamp columns or require existing projects to
+adopt the date type.
 
 ## The ledger and the rules
 

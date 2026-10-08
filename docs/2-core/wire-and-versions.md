@@ -194,11 +194,34 @@ Regenerating at shared version `0.7.2` or `0.7.3` remains red; change it to `0.8
 The existing runtime then refuses an older client line with 426/`dw.updateRequired`. A nullable
 `String? title` addition accepts the old payload and can stay on `0.7`.
 
-Missing descriptors are bootstrapped only from committed sources in disposable scratch, using
-existing resolved dependency information and matching committed locks, with exact reproduction of
-the committed codecs/registry. External path dependencies cannot establish a descriptor-free baseline: their historical bytes are not committed in the project tree. Unsupported formats, custom codecs, custom enum `name` encoders or default-equality overrides, missing dependencies or failed
-reproduction produce blocking `contract not verified` diagnostics; establish a regenerated baseline
-on the trusted base first. No feature-tree snapshot seed, historical dependency upgrade or setup
-script is used. Coverage is generated project codecs/registry, excluding handler/domain semantics
-and manually composed external modules. The descriptor is tooling metadata; it adds no runtime
-compatibility negotiation and does not change the framework `dwProtocolVersion`.
+### First descriptor adoption
+
+When the trusted base has no descriptor, first adoption requires unchanged
+hand-written shared package files and the union of **shared's own in-repo path-dependency
+closure at the trusted base and at head**. Starting from shared's `dependencies`, the generator
+follows each in-repo path dependency's pubspec transitively; dev dependencies and packages used
+only by the server or app are excluded. The resolved lock identifies dependency sources, including
+overrides; workspace members supply their own pubspec edges. Base pubspecs and locks are read from
+Git objects at the trusted SHA. The nearest-lock walk stops at the Git root. A dependency that
+leaves this closure blocks adoption and is named even if its old files remain unchanged in the
+repository, so repointing it to Git or an external path cannot hide a contract change.
+Framework git-subpath dependencies and dependencies outside the Git root at both revisions stay
+outside the comparison.
+
+For each compared package, the generator compares the union of base-tracked and current files,
+excluding that package's `pubspec.yaml` and `pubspec.lock`. In shared, only the exact paths emitted
+by the current generator and `.dw.dart` parts bearing its generated header are excluded; existing
+parts are judged from base bytes, so adding a header cannot hide a source edit. Hand-written files
+under `lib/generated/` are still compared. Regular files are hashed in one
+`git hash-object --stdin-paths` call with worktree-relative paths, applying Git clean/eol filters
+so a CRLF checkout of LF source passes; symlinks are hashed individually by their verbatim targets.
+A framework pin move may regenerate codecs and establish the descriptor; the result
+names the base SHA and adoption proof.
+If source differs, the gate names the files and asks to split the change: land the
+pin move and descriptor first, then edit the contract in a following PR. A committed
+descriptor always wins. No historical dependency fetch or codec reproduction is
+used. Unsupported formats, custom codecs, custom enum `name` encoders and
+default-equality overrides remain blocking `contract not verified` diagnostics.
+Coverage is generated project codecs/registry, excluding handler/domain semantics
+and manually composed external modules. The descriptor is tooling metadata; it adds
+no runtime compatibility negotiation and does not change `dwProtocolVersion`.
