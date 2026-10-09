@@ -274,27 +274,33 @@ bucket anyone can read, or a public one nobody can.
 1. **Root privileges** — root, or passwordless sudo; an unreachable host is not reported as a
    privilege problem.
 2. **Base packages and Docker**, installed only where Docker is missing.
-3. **The deployment user**, created if absent and added to the `docker` group.
-4. **The secret store**, with the secrets that are only random strings generated in place: with
+3. **BBR congestion control**: loads `tcp_bbr` now and on boot, verifies that the kernel provides
+   it, and writes the host's `fq` queue discipline and BBR selection under `/etc/sysctl.d`. The
+   rendered front proxy also selects BBR in its own network namespace, where the browser-facing TLS
+   sockets actually live; a host-only setting is not sufficient because congestion control is
+   namespaced. The proxy is the only service that accepts long-RTT public TCP, including traffic for
+   storage on its own domain.
+4. **The deployment user**, created if absent and added to the `docker` group.
+5. **The secret store**, with the secrets that are only random strings generated in place: with
    `database: bundled`, `DW_DATABASE_PASSWORD`; and with the bundled storage, the storage keys. An
    external database's `DW_DATABASE_*` are never generated — they are the provider's own credentials,
    delivered with `secret set`. Existing values are never replaced — regenerating the database
    password would lock the server out of a database initialised with the old one.
-5. **A repository key**, for a `git@` repository: generated **on** the server, so the private half
+6. **A repository key**, for a `git@` repository: generated **on** the server, so the private half
    exists nowhere else. When the server cannot yet reach the repository, setup stops and prints the
    public key, asking for it to be registered as a **read-only** deploy key — the server only ever
    fetches, and a writable key turns access to the box into access to the repository.
-6. **The checkout** of `branch`.
-7. **`.env`** with the generated secrets — what the compose file itself interpolates.
-8. **A data volume guard**: if the server already has a data volume of this project and an expected
+7. **The checkout** of `branch`.
+8. **`.env`** with the generated secrets — what the compose file itself interpolates.
+9. **A data volume guard**: if the server already has a data volume of this project and an expected
    one is missing — a config change renamed or replaced what a volume held — setup refuses. Compose
    would otherwise create that volume empty and serve it beside the real data, silently. `run` runs
    the same guard (below) right before it starts anything, because a server is not always `setup`
    again after a config change.
-9. **`docker-compose.yml`, `nginx.conf`**, the `nginx.d` directories, the override bridge and the
-   project's Nginx snippets, then `docker compose config --quiet` over the result.
-10. **The firewall**: `ufw` (installed when absent), OpenSSH, 80, 443 and `firewall_ports`.
-11. **A one-day self-signed certificate**, so Nginx can start at all — the real one cannot be issued
+10. **`docker-compose.yml`, `nginx.conf`**, the `nginx.d` directories, the override bridge and the
+    project's Nginx snippets, then `docker compose config --quiet` over the result.
+11. **The firewall**: `ufw` (installed when absent), OpenSSH, 80, 443 and `firewall_ports`.
+12. **A one-day self-signed certificate**, so Nginx can start at all — the real one cannot be issued
     until Nginx answers the challenge, and the first `run` issues it.
 
 It ends by naming the required secrets still to deliver. **Idempotent throughout**: every step finds
@@ -305,10 +311,17 @@ up a change to the rendered files. `--dry-run` prints the rendered `docker-compo
 ## `run` — deploy
 
 First `run` evaluates the working-copy checks of `deploy check` and refuses on any error, pointing at
-`dart run dartway_cli:dartway deploy check --local` for the detail. Then:
+`dart run dartway_cli:dartway deploy check --local` for the detail. Before its first remote step it
+also verifies that the host allows BBR; if not, it stops before replacing anything and asks for
+`dart run dartway_cli:dartway deploy setup`. An existing server converges with one
+`dart run dartway_cli:dartway deploy setup`, followed by
+`dart run dartway_cli:dartway deploy run`. Then:
 
 1. updates the checkout to `origin/<branch>` with `git reset --hard` — the server mirrors the
-   repository, and a stray edit on the box must not block a deploy (skipped with `--skip-git-update`);
+   repository, and a stray edit on the box must not block a deploy (skipped with `--skip-git-update`).
+   CI can pass `--revision <sha>` (7–64 hexadecimal characters) to deploy exactly the verified
+   commit. It must belong to `origin/<branch>`, and the run refuses rather than moving backwards
+   when the server is already at a descendant of that commit;
 2. writes the override bridge;
 3. **renders `docker-compose.yml` and `nginx.conf`** from `deploy/config.yaml` and this version of
    the CLI, and says of each whether it changed. Both are derived files, and a derived file written
@@ -390,7 +403,9 @@ that step's reason and the output the server kept, because a self-deploy resumes
 interruption and a failing step would otherwise be repeated until the attempts ran out — each time
 stopping the server it had just started again. `--retry-failed` with `--resume` runs it once more
 (against the checkout that deployment updated to); after fixing code, deploy anew rather than
-resume.
+resume. With `--revision`, resuming first verifies that a successfully completed checkout is still
+at that revision. A mismatch, or a recorded plan that had no checkout step, is refused with
+`revision-mismatch`; a checkout that previously failed is retried with the requested revision.
 
 A new `run` starts a new record, says where the previous deployment stopped if it did not finish,
 and refuses while a step of it is still running — two deployments never interleave on one server.
@@ -404,15 +419,15 @@ reads the events; the prose may change wording at any time, the events may not.
 |---|---|
 | `notice` | `message` — what the server said about the previous deployment |
 | `plan` | `steps` (`id`, `title`) — `--dry-run` only |
-| `run_started` | `environment`, `resume`, `steps` (`id`, `title`) |
+| `run_started` | `environment`, `resume`, optional `revision`, `steps` (`id`, `title`) |
 | `revision` | `commit` (full hash), `subject` — after the checkout update, or before the steps when there is none |
 | `step_skipped` | `index`, `count`, `id` — done by the deployment being resumed |
 | `step_started` | `index`, `count`, `id`, `title`, `picked_up` — waiting for a step already on the server |
 | `step_finished` | `index`, `count`, `id`, `exit_code`; `stdout`, `stderr` for a step whose output is its result |
 | `step_failed` | `index`, `count`, `id`, `reason` (`exit`, `verdict`, `busy`); `exit_code`, `stdout`, `stderr` or `message`; `resumed: true` when the step failed in the deployment being resumed and was not run again |
 | `services` | `services` (`name`, `status`) |
-| `probe` | `title`, `passed`, `detail` |
-| `run_finished` | `ok`, `exit_code`; `failed_step`, or `reason` (`checks`, `nothing-to-resume`, `unreachable`, `verification`) |
+| `probe` | `title`, `passed`, `warning`, `detail` |
+| `run_finished` | `ok`, `exit_code`; optional `failed_step` and `reason` (`bbr-unavailable`, `checks`, `nothing-to-resume`, `revision-mismatch`, `revision-not-found`, `revision-not-on-branch`, `superseded`, `unreachable`, `verification`) |
 
 **Then it verifies from outside**, as a browser and an app would, retrying failed probes up to twelve
 times five seconds apart:
@@ -420,6 +435,11 @@ times five seconds apart:
 - `GET /health` answers `200` `ok` through the api host and through the app host;
 - `GET /` on the app host is the Flutter `index.html`, served with a revalidating cache policy, and
   the build's entry points are not served for reuse without revalidation;
+- `main.dart.js` (or a Wasm build's `main.dart.wasm`) answers a request accepting gzip with
+  `Content-Encoding: gzip` and a JavaScript or Wasm content type; an HTML fallback is not a bundle.
+  `index.html` and `flutter_bootstrap.js` do not load CanvasKit from `www.gstatic.com` (an old
+  project Dockerfile is warned about without failing the deploy). The generated `useLocalCanvasKit`
+  setting selects local files even though Flutter retains the CDN fallback in its loader;
 - `/dw/live` upgrades through both hosts (from the app origin on the app host) and the server speaks
   on the socket;
 - where declared: the site answers `200 text/html`; the storage preflight admits a `PUT` from the app
@@ -458,11 +478,14 @@ skips DNS, the server and the deployed hosts — the form that needs no SSH key 
 | `ssh-reachable` | error | Key-based SSH works; when it fails the other server checks are skipped |
 | `deploy-user` | error | The deployment user exists |
 | `docker-available` | error | Docker Compose is usable by the deployment user |
+| `proxy-congestion-control` | error | The running front proxy reports `bbr` from its own network namespace; the host's value cannot stand in for this reading |
+| `host-congestion-control` | warning | The host reports `bbr`; re-run `deploy setup` when it does not, so SSH and registry pulls use the framework setting too |
 | `runtime-secrets` | error | Every required secret is in the server store with a value, and nothing reserved is |
 | `secret-files` | error | Every `requires.files` entry is delivered **and** mounted into the server container, read from the configuration Compose will actually run |
 | `database-reachable` | error | With `database: external`: `DW_DATABASE_PORT`/`_SSL`/`_MAX_CONNECTIONS`/`_CA_FILE` are validated exactly as the server parses them, then a throwaway, pinned Postgres client on the deployment host connects to the stored coordinates with the same `sslmode` the server will use (`require`, `verify-full` with a CA file, or `disable`) and runs a query — a real authenticated connection, not a bare TCP probe. A failure names why: a malformed stored value, DNS, refused, a timeout, authentication, the server not offering TLS, or its certificate not verifying against the configured CA. Skipped with `database: bundled` |
 | `secrets-match-local` | warning | The server store and `deploy/secrets.yaml` hold the same key names |
 | `outside` | error | The same outside probes `run` ends with, against whatever is deployed now; runs even when SSH fails |
+| `web-resources-local` | warning | The deployed startup files do not load CanvasKit from `www.gstatic.com`; an old web Dockerfile is named with the migration that adds `--no-web-resources-cdn` |
 
 ## Images
 
@@ -475,7 +498,7 @@ skips DNS, the server and the deployed hosts — the form that needs no SSH key 
   the server fails — and `ENTRYPOINT ["/app/server"]` in exec form.
 - **The web image** builds with Flutter from the project root, takes `ARG DW_BACKEND_URL` (and refuses
   to build without it) and `ARG STUDIO_APP_ORIGIN` (the same address, for the Studio binding's access
-  check; an app without the binding declares no such ARG and Docker drops it), runs `flutter build web --release --dart-define=DW_BACKEND_URL=…`, and serves
+  check; an app without the binding declares no such ARG and Docker drops it), runs `flutter build web --release --no-web-resources-cdn --dart-define=DW_BACKEND_URL=…` so CanvasKit is served from the app's own origin, and serves
   the build with `nginx:1.30.5-alpine` and `<project>_flutter/nginx.conf`. It serves files only.
 - **`.dockerignore` denies everything** and admits the packages by role suffix (`*_server/`,
   `*_flutter/`, `*_shared/`), minus build output and `.env` — so the working copy's history, build
@@ -490,6 +513,13 @@ and an `ETag` (a `304`, not a download) and keeps the long-lived, immutable rule
 a content hash. `web-cache-policy` reads that configuration; the outside probe asks the deployed site.
 **Fixing it does not reach a browser that already holds a copy** — tell whoever you can reach to
 hard-reload.
+
+The rendered front proxy compresses responses from the app and optional static-site hosts with
+gzip (level 5, for JavaScript, Wasm, CSS, JSON, SVG, text and web manifests) once they reach 1 KiB.
+It leaves the API host and the app host's `/dw/` call locations untouched: compression here owns
+large static delivery, while the call protocol remains exactly what the server emits. Nginx adds
+`Vary: Accept-Encoding`; its compressed weak ETag continues to make `If-None-Match` revalidation a
+`304`. The cache-control split above is unchanged.
 
 ## Secrets
 
@@ -542,7 +572,7 @@ running server keeps the environment it started with**: a changed secret takes e
 | `secret list` | Names only — which are required, generated, empty or refused — plus the stored files. Values are never read |
 | `secret put-file <path>` | Uploads a document (a service-account JSON) into the store with mode 600; `--name` stores it under another name. It reaches the server only when declared under `requires.files`, mounted read-only at `/run/secrets/<name>` — re-run `setup` after declaring one |
 | `secret push` | Adds to the server store what it lacks from the environment's section of `deploy/secrets.yaml`; a key whose server value differs is refused by name, never replaced silently |
-| `secret pull` | Copies keys the server has and the local file lacks into it; differing values are reported, never rewritten |
+| `secret pull` | Copies keys the server has and the local file lacks; `--overwrite KEY[,KEY…]` takes the server value for exactly the named differing keys |
 
 **`deploy/secrets.yaml`** is optional: the maintainer's copy of every environment's secrets, one
 section per environment and no shared section, git-ignored by the skeleton's `deploy/.gitignore`.
@@ -574,4 +604,13 @@ key names and a checksum of the store travel back, never a value, the same rule 
 everywhere else. That checksum is checked again right before `push` writes, so a second push, or a
 hand edit, landing in between the two is refused rather than silently undone; and a store that exists
 but cannot be read fails the comparison outright, rather than being read as an absent one that every
-key would then look new against. `pull` takes `--dry-run` too.
+key would then look new against.
+
+`pull` prints its plan as key names only: additions, requested overwrites, remaining differing keys,
+server-empty keys and local-only keys. Without `--overwrite`, a difference includes a ready-to-run
+command naming every differing key whose server value is non-empty. `--overwrite KEY[,KEY…]` replaces only those named values; there is no blanket
+overwrite because the local file may hold the only copy of a rotation that has not been pushed yet.
+An empty server value never replaces a non-empty local value: pull refuses and directs the maintainer
+to push instead. `--dry-run` prints the same plan without writing. A completed write is read back and
+verified; if the file cannot be parsed or a changed key does not match, its original bytes are
+restored.
