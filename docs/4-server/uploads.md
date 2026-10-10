@@ -32,8 +32,11 @@ arrived crashing the confirmation (D-034).
 
 **`DwGetFileLink(fileId)`** is a single request that answers a **`DwFileLink`**: `id`, `url`, and
 `expiresAt` for a private file. It is a request, not a command, so no signed URL is ever stored for
-idempotency; fetch it when the file is about to be shown. `fileName` is only a display name — the
-key is built from nothing the client sends.
+idempotency; fetch it when the file is about to be shown. The link shows the file (`inline`) by
+default; `DwGetFileLink(fileId, download: true)` asks for one that saves it (`attachment`, under the
+file's name), and that link is always presigned and expires, a public file's too — the permanent
+public URL cannot carry the disposition. `fileName` is only a display name — the key is built from
+nothing the client sends.
 
 The client side — the uploader, progress, retries — is [uploads on the client](../3-flutter/uploads-client.md).
 
@@ -104,6 +107,13 @@ Files live in two buckets of one storage (D-038b), and a rule's visibility picks
 A bucket is public or private as a whole, never by key prefix: a prefix policy is one mistyped
 resource away from making every file public, and a storage console shows a bucket's access, not a
 prefix's.
+
+**A `dw_stored_file` row says what the file is — its visibility and key — and the configuration
+says where files are kept** (D-138). Every link, read and deletion resolves the bucket from the
+row's visibility at the moment it runs, so a storage moved to other buckets, or to another storage
+altogether, serves every existing file from the new place once each object is copied there under
+the same key; the rows need nothing. A row whose visibility has no configured bucket fails as an
+incident naming the missing variable.
 
 Who reads a private file is `DwFileStorage.canRead(ctx, DwFileRecord file)`. Without it, only the
 uploader. A `false` answers `dw.forbidden` to a signed-in caller and `401` to an anonymous one, who

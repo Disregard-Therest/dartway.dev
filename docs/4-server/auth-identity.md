@@ -21,7 +21,7 @@ is required to keep using that default.
 | Table | What it holds |
 |---|---|
 | `dw_account` | an id and a creation time — the framework's whole idea of a person |
-| `dw_identity` | identifiers an account signs in with: kind (`phone`, `email`, or a provider's name — `google`, `apple`), normalized value or the provider's subject id, `verified_at`. Unique across accounts |
+| `dw_identity` | identifiers an account signs in with: kind (`phone`, `email`, or a provider's name — `google`, `apple`), normalized value or the provider's subject id, `verified_at`, and for a provider identity `provider_email` — the normalized address its token last proved verified, kept only under `linkByVerifiedEmail`. Unique across accounts |
 | `dw_auth_key` | session keys: the SHA-256 of the token, kind (`app`, `personal`), label, last use, revocation |
 | `dw_code_ticket` | one row per code sent: the SHA-256 of the code, attempts, expiry, purpose (`signIn`, `attach`) |
 
@@ -67,13 +67,13 @@ DwAuthConfig({
 | `generateCode` | The code this request gets, inside the ticket's transaction. `null` — whether `generateCode` is unset, or returns it for this call — draws `codeLength` random digits (`dwRandomCode`, exported for reuse); a project returns one of its own for a fixed code — a store reviewer, a test account, a default code out of its own settings — and `deliverCode` decides, independently, whether that code goes anywhere (issue #310: the two used to be coupled — a fixed code skipped `deliverCode` outright, so a fixed code that also had to be sent could not be expressed). |
 | `onAccountCreated` | Runs in the transaction that creates an account: the place to insert the profile. Refusing here refuses the sign-in, nothing is created, and the code stays usable. `origin` says who created the account (below). |
 | `onIdentifierChanged` | Runs in the transaction that changes an existing account's identifiers, once per account and identifier affected, after the change: the place to mirror an identifier into project rows, or to publish. Throwing undoes the change. Not called for the identity an account is created with, nor when a sign-in re-verifies an identifier the account already has. |
-| `linkByVerifiedEmail` | Off by default. On, the **first** sign-in of a provider identity (`dartway_auth_providers_server`) whose token proves a verified e-mail matching an existing `email` identity attaches to that account instead of making a new one, unless the account already holds a different identity of the same provider — see below. |
+| `linkByVerifiedEmail` | Off by default. On, one verified e-mail links a provider identity (`dartway_auth_providers_server`) and an `email` identity into one account, in either order: the **first** sign-in of a provider identity whose token proves a verified e-mail matching an existing `email` identity attaches to that account (unless the account already holds a different identity of the same provider), and an e-mail code for an address a provider identity's token proved attaches the `email` identity to that provider's account (unless provider identities of two or more accounts proved it) — instead of making a new one. See below. |
 | `codeLength` | Digits in a delivered code, 4 to 12. |
 | `codeLifetime` | How long a ticket accepts its code. |
 | `maxAttempts` | Wrong codes per ticket before it is dead. |
 | `maxRequestsPerWindow`, `requestWindow` | Code requests per identifier in the window, counted across sign-in and attach. |
 | `resendDelay` | Minimum time between two requests for one identifier; announced as `DwCodeTicket.resendAfter` and enforced. |
-| `keyTouchInterval` | A key's `last_used_at` is written at most once per interval, not on every call. |
+| `keyTouchInterval` | A key's `last_used_at` is written at most once per interval, not on every call, and always on the key's first use. |
 
 How long a resolved token is trusted without a query is a server setting, not an auth one
 (`tokenCacheSize`, `tokenCacheTtl` in [`DwServerSettings`](app-server.md#dwserversettings)).
@@ -128,8 +128,10 @@ terms: its `termsAcceptedAt` stays empty.
 `provider` (a provider identity, `google`/`apple`) — `DwIdentityInfo` splits the same way, in
 `kindName` when either name will do. An attached identifier has no `previous`, a removed one no
 `current`, a replaced one both. A move is two changes: removed from the account it left, attached
-to the one it joined. `linked` is a provider identity's first sign-in attached to an account by a
-verified e-mail match (`linkByVerifiedEmail`, below) rather than a confirmed code.
+to the one it joined. `linked` is one verified e-mail joining two identities into one account
+(`linkByVerifiedEmail`, below), in either direction: a provider identity's first sign-in attached
+to an account by its `email` identity (`provider` set), or an e-mail code's identity attached to
+the account whose provider identity proved the address (`kind` set) — rather than a new account.
 
 The framework publishes nothing about identifiers. The skeleton republishes the profile, which
 shows identifiers read from the framework; the example mirrors the phone into its profile row in
@@ -342,6 +344,24 @@ registered by someone else, whose Google sign-in would still say `email_verified
 address they do not otherwise control here. Apple's private relay address (`…@privaterelay.appleid.com`)
 simply never matches an e-mail identity, which is correct without any special case.
 
+**The other way round: an e-mail code after a provider.** Someone who signed up with "Continue
+with Google" and later asks for a code to the same address would otherwise get a second account too.
+With the option on, every provider sign-in — first or not — keeps the normalized address its token
+proved verified on the provider identity (`dw_identity.provider_email`), and clears it when the token
+proves none or the option is off; kept on every sign-in, it fills itself in for identities made before
+the option was turned on. An e-mail code sign-in to an address that no `email` identity holds looks
+there before creating an account: when provider identities of exactly one account proved the address,
+the `email` identity is attached to that account, verified, `onIdentifierChanged` runs
+(`DwIdentifierChangeCause.linked`, with `kind` set) instead of `onAccountCreated`, and the answered
+session's `isNewAccount` is `false`. When provider identities of **two or more** accounts proved it, the
+address is ambiguous: the code creates a new account as it would with the option off, and the server
+logs a warning — picking one of them would be a guess about whose address it is. The address is kept
+on the provider identity rather than as an `email` identity of its own, so it never brings back an
+address the person removed and adds no identity nobody confirmed by code. It runs under the same
+advisory lock of the e-mail identifier as the forward direction, so an e-mail code and a provider's
+first sign-in for one address, at once, still make one account. The trade is the same one turned
+around: whoever receives the address's mail now signs in to the account a provider once proved it for.
+
 **The one narrowing this option does apply on its own: a match is refused when the target account
 already holds a *different* identity of the same provider.** That is the shape the lapsed-domain
 takeover above would actually take on this side, too — an unrelated Google account signing in for
@@ -378,12 +398,34 @@ have nothing to work with; an exchange Apple refuses does not refuse the sign-in
 token already proved.
 
 **The app's half is two packages, one per provider**, so a project takes what it offers:
-`dartway_auth_google` (`dw.signInWithGoogle()`) and `dartway_auth_apple` (`dw.signInWithApple()`).
-Each makes the nonce, gets the token from the provider's SDK, sends the command and signs the
-answered session in; what the provider told about the person is handed to an `introduce` callback
-whose answer joins `registration`, so the project names its own fields and neither package knows
-them. Apple's package also carries the `authorizationCode`; Google's nonce is fixed by
-`DwGoogleAuth.initialize`, because the Google SDK takes it there rather than per sign-in.
+`dartway_auth_google` (`DwGoogleAuth.signInCommand()`) and `dartway_auth_apple`
+(`DwAppleSignIn.signInCommand()`). Each makes the nonce, gets the token from the provider's SDK and
+answers the `DwSignInWithProvider` it makes — and sends nothing. The app sends it with `dw.command`
+and keeps the answered session with `dw.signIn`, exactly as it does `DwVerifyCode`: one way to send
+any sign-in, whatever the credential. What the provider told about the person is handed to an
+`introduce` callback whose answer joins `registration`, so the project names its own fields and
+neither package knows them. Apple's command also carries the `authorizationCode`; Google's nonce is
+fixed by `DwGoogleAuth.initialize`, because the Google SDK takes it there rather than per sign-in.
+
+```dart
+final signIn = await DwGoogleAuth.signInCommand(
+  introduce: (account) => {
+    if (account.displayName case final name?) RegistrationKeys.firstName: name,
+  },
+);
+final result = await dw.command(signIn);
+if (result case DwCallOk(value: final session)) await dw.signIn(session);
+```
+
+**A provider sign-up the project refuses is finished with the same command.** A project whose
+`onExternalAccountCreated` refuses until the terms are accepted (`consentsRequired`) answers the
+first sign-in of a new person with that refusal; nothing is created, and Apple's code is not
+exchanged — the refusal rolls back before it. The app keeps the command in its state, shows its
+consent step, and sends `signIn.withRegistration({...consents})`: the same token, nonce and code with
+the consent keys added, later keys winning. The provider is not asked again — for Apple that matters,
+since a second authorization would not tell the name. A held command lives as long as its token:
+about an hour for Google, about ten minutes for Apple. `dw.providerCredentialRejected` on a re-send
+means the token has expired: ask the provider again.
 
 **What a project still owes the stores.** Offering Google or Apple sign-in brings App Store
 guideline 4.8 into play — an app whose main account uses a third-party sign-in must also offer one
@@ -414,8 +456,8 @@ its SHA-256: a leaked table signs nobody in.
   revocation.
 
 `ctx.sessionKey` is the `DwSessionKeyInfo` of the key that authenticated the call — `id`,
-`accountId`, `kind`, `label`, `createdAt`, `lastUsedAt` (lagging by up to `keyTouchInterval`),
-`revokedAt`. It is set on calls, on channel subscription checks and on routes declared with
+`accountId`, `kind`, `label`, `createdAt`, `lastUsedAt` (`null` until the key's first use, which is
+always recorded — `isUsed` asks it; afterwards lagging by up to `keyTouchInterval`), `revokedAt`. It is set on calls, on channel subscription checks and on routes declared with
 `DwRouteAuth.optional` or `DwRouteAuth.required` ([routes](routes.md)); it is `null` for an
 anonymous call and in jobs.
 
