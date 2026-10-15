@@ -16,7 +16,7 @@ database_id = "ef86bc92-6d3f-4169-998f-81eac7085d0a"
 # This list is also what tells sites apart: an accepted event is filed under the
 # host of its Origin. Adding a site is one entry here — e.g.
 # "https://dartway.dev,https://dartway.studio" — and nothing else.
-ALLOWED_ORIGINS = "https://dartway.dev"
+ALLOWED_ORIGINS = "https://dartway.dev,https://dartway.studio"
 
 # STATS_TOKEN is a secret, not a var:
 #   wrangler secret put STATS_TOKEN
