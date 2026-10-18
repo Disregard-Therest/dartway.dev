@@ -72,3 +72,22 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  # Cloudflare Pages takes over hosting (GitHub Pages stopped issuing HTTPS
+  # certificates for our domains, 18.10.2026). Runs beside GitHub Pages until
+  # DNS moves to Cloudflare; then the GitHub Pages jobs go.
+  cloudflare:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+      - run: mkdir site && tar -xf artifact.tar -C site
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=dartway-dev --branch=master
