@@ -84,6 +84,8 @@ jobs:
     uses: ./.github/workflows/deploy.yml
     with:
       ref: ${{ needs.sync.outputs.sha }}
+    # A called workflow sees no secrets unless passed; the Cloudflare job needs them.
+    secrets: inherit
     permissions:
       contents: read
       pages: write
