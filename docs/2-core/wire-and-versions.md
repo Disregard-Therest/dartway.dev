@@ -8,7 +8,7 @@ construction, because both sides use the declarations in `dartway_core_shared`
 server — a tool, a test, a proxy — and when the framework or the app changes under a build already
 installed on someone's phone.
 
-## Three paths
+## HTTP paths
 
 `DwHttpContract` declares them once for both sides:
 
@@ -16,7 +16,11 @@ installed on someone's phone.
 POST /dw/<WireName>   a request or a command; the body is the DTO's JSON
 GET  /dw/live         the WebSocket of live updates
 GET  /health          liveness and database reachability
+GET  /dw/health       the same check through an app host
 ```
+
+Health uses GET or HEAD; POST `/dw/health` remains a DTO call if a project
+registers the wire name `health`.
 
 `/dw/` and `/health` are reserved: a project route under them fails the server's startup
 ([../4-server/routes.md](../4-server/routes.md)).
@@ -135,7 +139,7 @@ closed, and `DwFlutterConfig.updateRequiredScreen` replaces the app — see
 ## Origins
 
 **Calls are same-origin by deployment, and the server sends no CORS headers — also in development
-(D-039).** In production the web app's host proxies `/dw/` and `/health` to the server
+(D-039).** In production the web app's host proxies only `/dw/` to the server
 ([../5-tooling/deploy.md](../5-tooling/deploy.md)); locally `dart run dartway_cli:dartway dev` does the same
 ([../5-tooling/cli.md](../5-tooling/cli.md)). A cross-origin browser call cannot get through anyway:
 a JSON body needs a preflight, and the server never answers one. Native apps send no `Origin` and are
@@ -173,18 +177,27 @@ recorded as a shape of its own (`http.utcOffset`), not by changing an existing o
 
 ### The generated project contract gate
 
-The generator emits sorted `lib/generated/dw_contract.json` (descriptor format and codec format 1)
-from the same resolved models as the codecs. `generate --check` and `check` compare the current
+The generator emits sorted `lib/generated/dw_contract.json` (descriptor format 2, codec format 1;
+format 1 baselines are also accepted) from the same resolved models as the codecs. `generate --check` and `check` compare the current
 source-derived shape with a fixed committed Git baseline. Pass `--contract-base <revision>`; it is
 resolved once to a commit SHA and reported. Normal project check uses the configured base branch
 merge-base (including main/master); CI supplies a trusted base SHA explicitly. Working JSON edits,
-regeneration and feature commits do not replace that baseline.
+regeneration and feature commits do not replace that baseline. A project with a `releaseBranch`
+raises the version at the release instead: tasks generate at the current version against the release
+branch, and `generate --release` raises it once (D-158, [CLI](../5-tooling/cli.md#dartway-generate--the-generated-code)).
 
 Field/wire-name removals and renames, recursive type/nullability/patch/default changes, resolved
 request/result-kind changes, strict-enum additions/removals and enum openness changes are breaking.
-New data-object update groups are conservatively breaking because an installed client cannot decode
-an unknown group. New calls and nullable/defaulted/patch fields are codec-compatible: the new decoder
-accepts missing keys and the old decoder ignores extra keys. Dart `required` on a nullable field does
+A new data object is additive, but the shared package's `version:` must be greater than the trusted
+base's version (a patch bump is enough). Its descriptor and generated protocol entry record `since`
+as that version. Existing objects retain the trusted base's `since`, or none for objects already
+known to every client of the line. The server filters response and live updates, including deletions,
+against the client's full contract version; it drops empty channels and sends no empty live update.
+`since` is metadata, never a shape change. The client still rejects unknown groups as a server bug.
+The descriptor moves to format 2 automatically on the next generation; no project code edit or
+framework wire version bump is needed.
+
+New calls and nullable/defaulted/patch fields are codec-compatible: the new decoder accepts missing keys and the old decoder ignores extra keys. Dart `required` on a nullable field does
 not make it wire-required. An already-open enum may gain values while retaining all old names and
 `unknown`. A changed default is breaking even when both codecs omit the same JSON key.
 

@@ -23,6 +23,171 @@ environments `deploy/config.yaml` declares. Every one that connects takes `--as 
 `packages/dartway_cli/lib/src/commands/deploy_*.dart`, `secret_commands.dart` and
 `packages/dartway_cli/lib/src/deploy/`.
 
+## Kamal and GHCR
+
+`dart run dartway_cli:dartway deploy kamal` generates the Studio deployment contract from
+`deploy/config.yaml` and the Flutter package's resolved CLI lock. Configure
+`staging` (destination `stage`) and/or `production` (destination `prod`);
+`local` is never a destination. Resolve the packages first.
+
+```bash
+cd <project>_flutter
+dart run dartway_cli:dartway deploy kamal
+dart run dartway_cli:dartway deploy kamal --check
+```
+
+Commit `deploy/kamal/`, `deploy/studio.yml` and `.github/workflows/images.yml`.
+Generated files carry their source instructions. `--check` writes nothing and
+names every stale file. Server route changes do not affect the generated web
+configuration. The API service is the root service on its own host only. On
+the app host, the web container's nginx proxies only `/dw/` to
+`DW_API_ORIGIN`; it serves every other app path itself. Project routes are
+available on the API host. Proxy buffering is off for API and storage.
+
+Kamal generation refuses a deployed `site:` because this topology does not
+support it yet; use `deploy run` for those projects.
+Kamal 2.12 uses kamal-proxy v0.10.2, with 30-second deployment
+and drain timeouts and five retained containers. The native proxy is configured
+with `net.ipv4.tcp_congestion_control=bbr`; provision BBR on the Linux host before
+booting it.
+
+The generated Images workflow runs after the project's `CI` workflow completes
+successfully. Image publication follows the `branch:` values of the configured
+deployments: a CI run on one of those branches publishes when it was started by a push or
+by hand (`workflow_dispatch`, write access only); enable one of the two there. The template enables `master`
+and `release` by default. `workflow_run` loads workflows from the default branch, so the initial
+installation must be merged there before this trigger can run. PR CI successes
+build without pushing or writing shared caches. Fork PRs skip this privileged
+workflow. The template ships no Images workflow or generated deployment files;
+configure targets, run `deploy kamal`, then commit its output. Projects without
+a generated Studio manifest skip builds.
+
+It respects `DW_CI_RUNS_ON`, builds `linux/amd64`, uses a GHA layer cache and
+pushes `<commit sha>` tags to GHCR with `GITHUB_TOKEN` on those two branches.
+Existing manifests are skipped; registry failures fail the job. PR runs build
+without pushing. The OCI source label links the packages to their repository.
+
+Bundled storage is a service built from `rustfs/rustfs:1.0.0` with a TLS host;
+external storage has no service and receives its environment through secrets.
+Bundled Postgres is an API accessory on `postgres:17-alpine`, with no host port.
+Project names start with a lower case letter or digit and contain only lower case
+letters, digits, `_` and `-`. Invalid repository-derived names are refused with
+their value and the `project:` key to set explicitly. Kamal and
+Images use the same project identity without lowercasing it. Configs list secret
+names only, including required project secrets; Studio supplies their values,
+SSH credentials and `KAMAL_REGISTRY_PASSWORD`. `ssh_user` comes from the target.
+
+### Native checks and ingress policy
+
+`deploy check` selects its engine from `deploy/studio.yml`: a native manifest
+selects Kamal; projects without one retain Compose. `--engine kamal` or
+`--engine compose` selects it explicitly. `deploy run` remains the Compose
+operator and always checks Compose. Generating a manifest does not deploy it.
+
+```bash
+dart run dartway_cli:dartway deploy check --env staging --local
+dart run dartway_cli:dartway deploy check --env staging --version <full-commit-sha>
+```
+
+Without `--version`, native operator checks use the checkout's HEAD. A branch
+name or abbreviated SHA is refused. Native checks verify generated files, the
+running service/role/destination and selected image SHA, health, actual TLS
+routes and active targets, BBR in the proxy namespace, per-file read-only secret
+mounts, and the native Postgres/storage mounts. A healthy replacement container
+with the old route still active fails. An overlapping host claim, rollout or
+read target fails. Docker inspection projects only identities, health status,
+mount metadata and network addresses; it never reads container environments or
+health logs. These checks do not prove stored data: prove a backup restore before
+changing engines.
+
+Declare the actual `kamal` network subnets under `trusted_proxy_networks` for each
+destination, then wire `DwServerEnvironment.trustedProxyNetworks`,
+`httpBehindProxy` and `deploymentVersion` into `DwServerSettings` as described in
+[server configuration](../4-server/app-server.md#per-peer-call-quotas). Native
+checks require this explicit trust and compare it with the actual Docker network.
+The Docker network must exist before that check can pass. The generated API
+proxy sets `forward_headers: true` to preserve the chain from the app host;
+kamal-proxy still appends its actual TCP peer. Web ingress keeps Kamal's TLS
+default, replacing incoming forwarding headers. Do not set `client_ip_header`
+to an untrusted public header.
+
+Generation refuses `deploy/nginx.d/*.conf`: native Kamal does not run the Compose
+front nginx and cannot silently preserve its policies. Move per-call peer quotas
+to `DwServerSettings.callRateLimits`; review all other snippets before removing
+them. Compose remains available for a deployment that needs those policies.
+
+### File secrets
+
+Declare file names under the project's or destination's `requires.files`.
+The API destination mounts each file from
+`/home/<deploy_user>/.config/<project>/<name>` to `/run/secrets/<name>`,
+read-only. Web and storage receive no such mounts; the secret store's
+`secrets.env` is never mounted. Files are not copied into images or converted
+to environment variables.
+
+Deliver them before the first boot, and again when rotating a credential:
+
+```bash
+dartway secret put-file /private/path/fcm.json --name fcm.json --env staging
+```
+
+This uses the existing server-side file store. An upload stays in a private
+temporary directory and atomically replaces the stored file only when complete.
+A running container keeps its previous mounted file; its replacement receives
+the updated file. Image rollback uses the currently delivered secret, not a
+historical credential snapshot. Secret rotation and image rollback are separate
+operations.
+
+The generator writes an executable `deploy/kamal/hooks/api/pre-app-boot` and
+sets the API's `hooks_path`. Commit the hook with its executable bit. Kamal
+runs it before each boot group, including `kamal app boot` and rollback. It
+uses the installed Kamal gem and the API's resolved SSH settings, including
+keys, agent and proxy. It checks each selected host without reading secret
+contents: a real directory with owner-only permissions (700; an inherited
+setgid bit is allowed), nonempty regular files with mode
+400 or 600, no symlinks, and matching file/directory ownership. A failure
+stops the boot. Do not use `--skip_hooks` for deployments requiring files.
+`deploy kamal --check` also reports a missing executable bit on Unix.
+
+Delivery to a new host remains a prerequisite: generating config does not
+upload files, and the generated Images workflow handles no secret contents.
+Studio's deploy runner must preserve the generated hooks and deliver files
+before invoking Kamal. No Studio file-upload interface is supplied by this CLI.
+
+The Studio check image reads a checkout mounted read-only at `/project`, with
+`--project /project --env stage --version <full-commit-sha>` (or `prod`).
+The generated manifest supplies `{version}` as an argument placeholder: the
+runner must substitute the selected deployment SHA, not the framework image tag.
+This image is an outside-only checker and requires no SSH, Docker socket or Git.
+Both API `/health` and app `/dw/health` must return the selected SHA in `ETag`; a
+healthy old deployment fails. It verifies TLS by making HTTPS
+requests, health on both hosts, the live socket hello, web caching and bundled
+storage visibility and CORS preflights on both buckets, and exits nonzero on a failure.
+With bundled storage, the API's
+`DW_STORAGE_PROVISION=true` makes `DwFileStorageSetup.provision` create both buckets,
+set their policies, configure GET/PUT CORS from the entry point's explicit
+`allowedOrigins: env.server.allowedOrigins`, and write the
+visibility probe into each before serving. No origins leaves CORS untouched. A storage
+answering `501 NotImplemented` warns with its endpoint and bucket and continues; the outside
+CORS probe still reports the actual state. Other CORS errors stop provisioning. This works with `DW_STORAGE_VERIFY_BUCKETS=false`; Kamal has no `storage-init` service.
+
+The check image tag follows the resolved `dartway_cli`: Git uses the lock's resolved ref SHA, path uses the checkout's
+HEAD, and pub.dev uses the lock's exact version. A path dependency on a vendored
+`dartway_cli` inside the project's own git work tree is refused; pin it by git ref
+so the tag identifies a framework commit. A Git/path SHA tag becomes
+available after that framework commit reaches master and its image build passes;
+uncommitted checkout changes do not get an image of their own. Framework CI builds SHA tags on
+`master`. A push to `stable` copies that image to the published CLI version,
+skipping prereleases and existing version tags with a notice. A version tag
+belongs to the commit at which that CLI version was published. When pub.dev has no such version, promotion ends successfully with a notice and pushes nothing. After a later publish, run **Check image version** on `stable` by hand. The PR runs this promotion in dry-run mode.
+Hosted projects get this capability with the first CLI release after #530.
+
+Studio owns server preparation and deploy execution. A live project's move and
+its existing Postgres/RustFS volumes need a separate project migration. The
+Compose `deploy run` workflow below remains available for projects awaiting that
+move. After the first framework image push, the owner must make the
+`dartway-check` GHCR package public in its package settings.
+
 ## One file describes an environment
 
 `deploy/config.yaml` holds one environment per top-level key, plus three keys that belong to the
@@ -51,6 +216,7 @@ reads it.
 | `storage` | no | `bundled` or `external`; absent means no file storage |
 | `storage_domain` | with `bundled` | The public host of the bundled storage; refused without `storage: bundled` |
 | `min_free_disk` | no | Minimum free space on Docker's data root before building; defaults to `10GB`. Positive sizes in `MB` or `GB` (1024-based), for example `512MB` or `10GB` |
+| `build_cache_keep` | no | Build cache retained after a successful deploy; defaults to `10GB`. Positive sizes in `MB` or `GB`, for example `512MB` |
 | `registry_mirror` | no | Pull the official Docker Hub images of the stack (`postgres`, `nginx`) through a mirror such as `mirror.gcr.io`; the bundled storage and certbot come from where they live |
 | `firewall_ports` | no | TCP ports to open beyond SSH, 80 and 443 |
 | `requires.secrets` | no | Secrets nobody can generate, as environment variable names |
@@ -108,16 +274,15 @@ after that its own secret store names it.
 ## Three hosts, one server process
 
 ```
-app.example.com   →  the web image;  /dw/ (the live socket included) and /health → the server
+app.example.com   →  the web image;  only /dw/ (the live socket included) → the server
 api.example.com   →  everything → the server
 example.com       →  the site directory, static            (optional)
 files.example.com →  the bundled storage                    (with storage: bundled)
 ```
 
 **The app calls its own origin.** On the app host the front Nginx serves the web image and
-sends `/dw/`, `/dw/live` and `/health` to the server, so a browser makes same-origin calls: no CORS,
-no preflight, and the server answers none. The web build is given that origin as
-`DW_BACKEND_URL`. The api host proxies everything to the server — calls, the live socket, and the
+sends `/dw/` (including `/dw/live` and `/dw/health`) to the server, so a browser makes same-origin calls: no CORS,
+no preflight, and the server answers none. Web release builds use `Uri.base.origin`. The api host proxies everything to the server — calls, the live socket, and the
 project's own doors (`DwHttpRoute`) such as a webhook. The server serves no static files. Local
 development has the same shape through `dart run dartway_cli:dartway dev` ([The CLI](cli.md)).
 
@@ -150,7 +315,7 @@ The rendered Nginx:
 |---|---|
 | `postgres` | With `database: bundled`: `postgres:17-alpine`, on the volume `postgres_data`, with a `pg_isready` healthcheck. Absent with `database: external` — no service, no volume, no `depends_on` on it |
 | `server` | Built from `<project>_server/Dockerfile` with the project root as context. Secrets through `env_file: .env`; `PORT=8080` always, and with `database: bundled` (and, with the bundled storage, `DW_STORAGE_*`) `DW_DATABASE_*` in the compose file too — with `database: external` none of `DW_DATABASE_*` is rendered at all, all five (`HOST`, `PORT`, `NAME`, `USER`, `PASSWORD`) come from `.env` like any other secret. Exposed to the network only. `stop_grace_period: 45s`; healthcheck `GET /health` with a 600-second start period, because migrations run before the port opens |
-| `web` | Built from `<project>_flutter/Dockerfile` with the build argument `DW_BACKEND_URL` = the app origin |
+| `web` | Built from `<project>_flutter/Dockerfile`; `deploy run` passes `DW_BACKEND_URL` from `app_domain` as a build argument. The template's web release calls `Uri.base.origin` |
 | `storage`, `storage-init` | With `storage: bundled`: RustFS, and a one-shot job (a generic S3 client) that creates and configures both buckets on every deploy |
 | `nginx` | `nginx:1.30.5-alpine` (pinned, raised with the framework) on 80 and 443 |
 | `certbot` | Renews the certificate every 12 hours |
@@ -419,7 +584,16 @@ converges with one `dart run dartway_cli:dartway deploy setup`, followed by
    self-signed certificate back. On a routine deploy step 7 has already covered every host, and
    this asks nothing;
 14. restarts Nginx and checks it is still running afterwards: `restart` exits 0 for a proxy that dies
-    a second later on its configuration.
+    a second later on its configuration;
+15. verifies the stack from outside (the probes below);
+16. **cleans up after success:** removes unused server and web images belonging to this Compose
+    project, keeping both rollback images and every image still used by a container, then trims the
+    build cache with the `build_cache_keep` budget, retaining shared cache keys for kept images.
+    Other stacks' images, Postgres, RustFS, Nginx and certbot are preserved. Cleanup reports the
+    removed image and cache-record counts, bytes freed, and the build cache bytes shared with kept
+    images in one line. A cleanup failure is a warning;
+    the deploy still exits 0.
+    `--resume` retries only cleanup, without replacing services or repeating outside probes.
 
 What keeps a push routine is not that the rendering is skipped but that it is idempotent and
 reported: a run that changes nothing says "unchanged" for both files. Everything else infrastructural
@@ -429,7 +603,9 @@ reported: a run that changes nothing says "unchanged" for both files. Everything
 
 ### A step outlives the connection that started it
 
-Every step runs on the server **detached from the `ssh` session**: its script is written to
+Outside probes run on the invoking machine; their outcome is journalled before cleanup. If that
+invocation stops before recording their success, or probes fail, a resume verifies again. The remote
+steps run on the server **detached from the `ssh` session**: its script is written to
 `~/.config/<project>/deploy-run/` of the deploy user and started in a session of its own
 (`setsid`), streams to files, exit code written last. The call that starts a step waits for it, so a
 routine deploy still makes one connection per step; when that connection breaks, fresh ones wait for
@@ -449,14 +625,37 @@ Both interrupted states are retried by `--resume`, with or without `--retry-fail
 runs automatically. A build refused by the space check names Docker's data root and the configured
 minimum; free space or lower `min_free_disk` in `deploy/config.yaml` before trying again.
 
+**Disk.** A successful deploy cleans its old images automatically, including images left by earlier
+runs. The server and web rollback images are pinned before building and recorded in the deployment
+journal, so a resume keeps the same targets. If a container image digest cannot be inspected,
+the tag is accepted only when Docker proves that image still holds the running container. After
+an interrupted deployment moved the tag, the next fresh deploy recovers by itself: it tries the
+`<project>-<service>:dw-previous` pin that deployment left, under the same proof. When neither
+holds the running container, it is refused before stopping the service. Images go before cache:
+the containerd image store shares BuildKit snapshots with exported images. Every prune uses
+`--keep-storage` with `build_cache_keep`; shared cache keys for retained images survive so unchanged
+builds can reuse their layers. Docker excludes shared bytes from that budget, and so does the check
+after the prune: cleanup warns only when the cache no kept image shares stays above the limit, and
+reports the shared bytes as information. The reported byte count is the
+observed increase in free space on Docker's data filesystem (negative changes are reported as zero;
+containerd may reclaim additional bytes asynchronously). The cache limit applies to the Docker daemon's builder across the machine, not only this stack.
+
+If an older CLI moved the image tag before it failed and left no usable rollback pin, rerun with
+`dart run dartway_cli:dartway deploy run --env <env> --without-rollback-image` to consciously allow this one deployment
+when the running image cannot be resolved. The flag is not stored in config. The CLI records an
+empty previous-image entry and warns that a failure leaves the service down until the next deploy.
+When the image can be resolved, it is still pinned for rollback even with the flag.
+
 That covers deploying from inside the stack being deployed (DartWay Studio deploying itself), but the
 steps after the interruption still need someone to run them: **`dart run dartway_cli:dartway deploy run --env <env>
 --resume`**. It reads the record of the last deployment on the server and, in that deployment's
 plan, passes over the steps that finished, waits for a step still running instead of starting it a
 second time, judges again from its output a finished step whose success is checked beyond its exit
-code (the upstream check), and runs everything from the first step that actually runs — then the
-services and the probes, as always. A step that ended badly in the deployment being resumed is **not** run again: the resume stops with
-that step's reason and the output the server kept, because a self-deploy resumes after every
+code (the upstream check), and runs everything from the first step that actually runs — including the
+services and probes when verification has not finished. Once outside verification passed, a cleanup
+retry skips every successful step and runs only cleanup. Except for cleanup and the read-only outside
+probes, a step that ended badly in the deployment being resumed is **not** run again: the resume stops
+with that step's reason and the output the server kept, because a self-deploy resumes after every
 interruption and a failing step would otherwise be repeated until the attempts ran out — each time
 stopping the server it had just started again. `--retry-failed` with `--resume` runs it once more
 (against the checkout that deployment updated to); after fixing code, deploy anew rather than
@@ -481,15 +680,20 @@ reads the events; the prose may change wording at any time, the events may not.
 | `step_skipped` | `index`, `count`, `id` — done by the deployment being resumed |
 | `step_started` | `index`, `count`, `id`, `title`, `picked_up` — waiting for a step already on the server |
 | `step_finished` | `index`, `count`, `id`, `exit_code`; `stdout`, `stderr` for a step whose output is its result |
-| `step_failed` | `index`, `count`, `id`, `reason` (`exit`, `verdict`, `busy`); `exit_code`, `stdout`, `stderr` or `message`; `state` (`diskFull` or `vanished`) for a step stopped without an exit code; `resumed: true` when the step failed in the deployment being resumed and was not run again |
+| `cleanup` | `images_removed`, `cache_records_removed`, `freed_bytes`, `cache_shared_bytes` when measured; `warning`, optional `message`. A warning leaves `run_finished.exit_code` at 0 |
+| `step_failed` | `index`, `count`, `id`, `reason` (`exit`, `verdict`, `busy`, `exception`); `exit_code`, `stdout`, `stderr` or `message`; `state` (`diskFull` or `vanished`) for a step stopped without an exit code; `resumed: true` when the step failed in the deployment being resumed and was not run again |
 | `services` | `services` (`name`, `status`) |
 | `probe` | `title`, `passed`, `warning`, `detail` |
 | `run_finished` | `ok`, `exit_code`; optional `failed_step` and `reason` (`bbr-unavailable`, `checks`, `nothing-to-resume`, `revision-mismatch`, `revision-not-found`, `revision-not-on-branch`, `stack-identity`, `superseded`, `unreachable`, `verification`) |
 
+Cleanup warnings still close the step: `step_finished` includes its actual exit code, even when
+non-zero; an exception emits `step_failed` with `reason: exception`. Both leave the successful
+deployment at exit 0.
+
 **Then it verifies from outside**, as a browser and an app would, retrying failed probes up to twelve
 times five seconds apart:
 
-- `GET /health` answers `200` `ok` through the api host and through the app host;
+- `GET /health` on the api host and `GET /dw/health` on the app host answer `200` `ok`;
 - `GET /` on the app host is the Flutter `index.html`, served with a revalidating cache policy, and
   the build's entry points are not served for reuse without revalidation;
 - `main.dart.js` (or a Wasm build's `main.dart.wasm`) answers a request accepting gzip with
@@ -521,9 +725,9 @@ skips DNS, the server and the deployed hosts — the form that needs no SSH key 
 | `docker-context-packages` | error | Each image copies every package it depends on, and `.dockerignore` admits it — a missing one fails as `pub get` exit code 66, three layers from the cause |
 | `dependencies-inside-context` | error | No image resolves a package by a path outside the project — the context is the project root, so `pub get` in the image cannot find it though every checkout resolves. `pubspec_overrides.yaml` counts unless `.dockerignore` keeps it out. The usual cause is an unpublished framework taken from a local checkout: depend on it by git with a pinned ref instead |
 | `server-signals` | error | The server image's `ENTRYPOINT` (or `CMD`) is in exec form, so the binary is PID 1 and receives the SIGTERM a deploy sends; under `/bin/sh -c` it is killed mid-call when the grace period runs out |
-| `web-backend-url` | error | The web Dockerfile declares `ARG DW_BACKEND_URL` — Docker silently drops an undeclared build argument |
 | `locked-dependencies` | error | Every image's `pub get` runs `--enforce-lockfile`, and the package has a committed `pubspec.lock` — otherwise pub may resolve a different set inside the container than the project was tested with, and a deploy has already failed that way |
 | `web-flutter-version` | error | The web image builds on the Flutter `.fvmrc` names — it installs it from `.fvmrc`, or its Flutter image carries that tag. Flutter pins some packages an app resolves, so a lock written on one Flutter fails `--enforce-lockfile` on another |
+| `web-backend-url` | error | If the web Dockerfile declares `ARG DW_BACKEND_URL`, its build consumes the argument that `deploy run` passes from `app_domain`. Skipped when the Dockerfile declares no such argument |
 | `web-file-modes` | warning | The web image grants everyone read on the files it serves (`chmod -R a+rX build/web`). `COPY` keeps modes, and under a deploy user's umask of `077` the files a commit adds are served as 403 while every page answers 200 |
 | `web-cache-policy` | warning | The web image's Nginx configuration revalidates every Flutter entry point |
 | `nginx-upstreams` | error | Every `proxy_pass` in the rendered Nginx and in `deploy/nginx.d/` names a service of the stack or the override |
@@ -555,10 +759,14 @@ skips DNS, the server and the deployed hosts — the form that needs no SSH key 
   copies the shared and server packages by name, compiles `bin/server.dart` with `dart compile exe`,
   and runs the binary on Alpine with `ca-certificates` — without them every outbound HTTPS call from
   the server fails — and `ENTRYPOINT ["/app/server"]` in exec form.
-- **The web image** builds with Flutter from the project root, takes `ARG DW_BACKEND_URL` (and refuses
-  to build without it) and `ARG STUDIO_APP_ORIGIN` (the same address, for the Studio binding's access
-  check; an app without the binding declares no such ARG and Docker drops it), runs `flutter build web --release --no-web-resources-cdn --dart-define=DW_BACKEND_URL=…` so CanvasKit is served from the app's own origin, and serves
-  the build with `nginx:1.30.5-alpine` and `<project>_flutter/nginx.conf`. It serves files only.
+- **The web image** builds with Flutter from the project root, without a backend build
+  argument. It runs `flutter build web --release --no-web-resources-cdn`, uses
+  `Uri.base.origin` for calls, and serves the build with `nginx:1.30.5-alpine` and
+  `<project>_flutter/nginx.conf`. The same image serves stage and prod.
+  `deploy run` supplies `STUDIO_APP_ORIGIN` (the app's own address) as a build
+  argument for projects whose Dockerfile forwards it to a Dart define; an app
+  without the binding needs no such argument. A Kamal web image omits the define:
+  the Studio binding takes its own `Uri.base.origin` in a web release.
 - **`.dockerignore` denies everything** and admits the packages by role suffix (`*_server/`,
   `*_flutter/`, `*_shared/`), minus build output and `.env` — so the working copy's history, build
   output and local secrets never reach the Docker daemon.

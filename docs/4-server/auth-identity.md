@@ -147,8 +147,9 @@ Registered by the framework in every server; a project may not register handlers
 | `DwVerifyCode(ticketId, code, registration)` | anonymous | `DwAuthSession` | checks the code; creates the account when the identifier has none; makes an `app` session key |
 | `DwSignOut()` | signed in | none | revokes the caller's session key |
 | `DwDeleteMyAccount()` | signed in | none | deletes the caller's account when `accountDeletion` is `byMember`, refuses `dw.forbidden` otherwise — see below |
-| `DwRequestIdentifierCode(kind, identifier)` | signed in | `DwCodeTicket` | a code to an identifier the caller wants to attach, or change theirs to |
-| `DwConfirmIdentifier(ticketId, code, replace)` | signed in | `DwIdentityInfo` | attaches the identifier or, with `replace`, puts it in place of the caller's identifiers of that kind |
+| `DwRequestIdentifierCode(kind, identifier)` | signed in | `DwCodeTicket` | requests project-configured code or link proof for attachment/replacement |
+| `DwConfirmIdentifier(ticketId, code, replace)` | signed in | `DwIdentityInfo` | attaches a code-confirmed identifier or replaces those of its kind |
+| `DwConfirmIdentifierLink(token)` | anonymous | none | confirms the account-bound link without changing the caller's session |
 
 **A code request answers the same whether the identifier belongs to an account or not.** Otherwise
 the command would tell anyone which phone numbers are registered. `DwAuthSession.isNewAccount` is
@@ -486,12 +487,60 @@ Three ways to get one, by where the code runs:
 | `listIdentities(accountId)` | `List<DwIdentityInfo>` | oldest first |
 | `listIdentitiesOf(accountIds)` | `Map<int, List<DwIdentityInfo>>` | one query for a list of profiles; every account asked for is a key |
 | `accountsMatching(fragment, {kinds})` | `Set<int>` | case-insensitive substring of stored (normalized) identifiers; `%`, `_` and `\` match themselves; an empty fragment throws |
+| `updateIdentifiers(accountId, {phone, email, beforeChange})` | `List<DwIdentityInfo>` | trusted backend edit of an existing account; keep/set/clear patches, both identifiers and project callback atomic; never creates or merges an account, preserves sessions |
 | `moveIdentities(fromAccountId, toAccountId, {kinds})` | `List<DwIdentityInfo>` | a merge, in one transaction under the per-identifier locks; `onIdentifierChanged` runs for both accounts. Revokes nothing |
 | `removeIdentities(accountId, {kinds})` | `List<DwIdentityInfo>` | a removed identifier is free: a later sign-in with it makes a new account. Revokes nothing |
 | `issueKey(accountId, {label, kind})` | `DwIssuedKey` (`key`, `token`) | a personal key unless `kind` says otherwise. The token exists only in this answer |
 | `listKeys(accountId)` | `List<DwSessionKeyInfo>` | newest first, revoked ones included until cleanup |
 | `revokeKey(keyId, {accountId})` | `bool` | whether a live key was revoked. Pass the caller's account when the key id came from a client, so nobody revokes a key that is not theirs |
 | `revokeKeys(accountId)` | — | every key of the account, app and personal |
+
+### Trusted administrative identifier edits
+
+`updateIdentifiers` does not authorize or impersonate the target. Its caller must enforce the
+project's admin/backend policy; `ctx.accountId` remains the caller. Values use `DwAuthConfig.normalize`.
+A set patch replaces every identifier of that kind, keeping a matching own identity or the oldest
+identity's id; clear removes the kind, and keep does nothing. New/changed values are unverified:
+trusted administrative entry is not proof of a mailbox or phone. An unchanged matching value keeps
+its existing proof. Provider identities also count as login methods.
+
+The operation refuses `dw.notFound` for a missing account, `dw.invalid` on `phone`/`email` for invalid
+input, `dw.identifierTaken` on the occupied field, and `dw.invalid` on the composite `identifiers` field when the final account
+would have no login identity. This field names the pair, not an individually malformed value. All conflicts are checked before callbacks or writes. It returns
+**all final identities**, oldest first, including provider identities. Hooks run only for actual
+additions, removals or value changes (including removed duplicate identities), with
+`DwIdentifierChangeCause.updated`; a no-op emits no hooks. A valid all-keep call still runs
+`beforeChange`, for a profile-only edit.
+
+For a combined project profile and identifier edit, read the target profile without a row lock to
+find its account, then call the API. Lock/revalidate that profile and write its fields only inside
+`beforeChange`. Never take the profile lock first: authentication hooks lock the account and
+identifiers before reaching project rows. The callback runs after account/identifier locks and
+conflict/final-login checks, before all identity writes; every identifier hook then reads the same
+final profile and both final identifiers. A failure rolls back the callback, identities and
+publications together, including inside an outer `ctx.transaction` savepoint.
+
+```dart
+await ctx.accounts.updateIdentifiers(
+  accountId,
+  phone: command.phone,
+  email: command.email,
+  beforeChange: (batchCtx) async {
+    // Lock/revalidate the project's target row here, then update its fields
+    // through batchCtx.db. Do not change its account id.
+    await writeProfile(batchCtx, accountId, command);
+  },
+);
+```
+
+Callbacks and hooks must use the passed transaction context and perform no outbound requests or
+nontransactional effects. The server retries deadlock/serialization conflicts at the enclosing
+transaction boundary, at most three attempts. A bare-database service uses the same bounded retry
+policy for top-level transactions; inside a caller-owned transaction a conflict propagates, so the
+caller retries the whole transaction. Ownership is resolved before account locks and checked again
+under identifier locks; a changed owner aborts before any callback/hook runs. There is no global
+sign-in mutex. `removeIdentities` still permits removing all identities for an explicit merge; the
+last-login safeguard belongs to trusted edits, not to that separate operation.
 
 **A command that issues a key never stores its successful outcome** (D-043). The outcome table
 would otherwise hold the bearer token for a week. A retried send runs again and makes a second key;
@@ -513,3 +562,61 @@ is all.
 - [Access and roles](../2-core/access-and-roles.md) — who may call what, once signed in.
 - [Channels and realtime](../2-core/channels-and-realtime.md) — every subscription requires sign-in.
 - [Testing](../5-tooling/testing.md) — signing test callers in.
+
+## Confirming an identifier by link
+
+`DwAuthConfig.attachDelivery` selects link delivery per identifier kind; an absent kind keeps
+code delivery. Sign-in codes and their delivery are unchanged. Configure a trusted project URL,
+not a caller-supplied Host header or origin:
+
+```dart
+attachDelivery: {
+  DwIdentifierKind.email: DwIdentifierLinkPolicy(
+    urlTemplate: 'https://example.com/#/email-confirm?token={token}',
+    replace: true,
+    deliverLink: (ctx, kind, identifier, link) async {
+      // Send through the project's mail provider; never log the link.
+    },
+  ),
+},
+```
+
+The policy requires exactly one `{token}` in an absolute URL, a positive lifetime (24 hours by
+default), and a delivery callback. `replace` is bound at request time; neither the requester nor
+the landing browser can downgrade the policy or change that intent. `DwRequestIdentifierCode`
+keeps its payload and returns only opaque `DwCodeTicket` metadata. Despite its historical name,
+a ticket delivered by link cannot be confirmed with a code. Delivery runs after ticket commit,
+with the same request idempotency and provider-failure semantics as code delivery.
+
+A link has 128 random bits; only its hash is stored. It is single-use. A new link request for the
+account's attach purpose consumes all older links across destinations, retaining their request
+history for rate limits. It does not consume sign-in or code-confirmation tickets.
+
+The project's public landing calls `DwConfirmIdentifierLink(token: token)`. It works anonymously
+or while signed in as somebody else, changes only the account bound to the ticket, and returns
+void without identifiers or a session. Its browser remains signed in exactly as before. The
+identifier hook receives cause `confirmed` and the bound account; publish that account's profile,
+not the landing browser's account. Unknown, expired, consumed, superseded and occupied links all
+answer the same `DwCoreRefusal.invalid` on `token`, with no parameters: the `linkInvalid` category.
+
+Success is not cached for idempotency. If the first response is lost after commit, retrying returns
+the same invalid-link category, while the account remains changed. A hook failure rolls back both
+the change and consumption; an occupied destination consumes the valid ticket before refusing.
+
+For web landing URLs prefer a fragment route: fragments never enter HTTP access logs. Capture the
+token in memory and replace the browser URL with a clean route **before** confirmation or error
+reporting. Do not retain it in preferences, route/error context, provider diagnostics or logs. A
+native deep link is also supported; its host application must apply the same secret discipline.
+
+Ticket cleanup keeps each row until its stored expiry and the required request-history window
+have both elapsed. Request transactions claim the canonical actor/idempotency key before account
+and identifier guards, then recheck the outcome before rate limits or ticket mutation. This also
+covers a duplicate arriving before the first ticket commits; delivery still runs once after locks
+are released.
+
+The delivery callback owns provider-error sanitization. A provider exception may retain the whole
+outbound URI or echo message content; catch it inside the hook and raise a safe refusal or sanitized
+exception without embedding the original error. The framework forwards arbitrary hook exceptions
+to alert sinks; it cannot make a provider's arbitrary object safe. Captured-delivery tests should
+exercise an echoing provider error and assert both recorded logs and structured incidents exclude
+the link token. Never wrap the original exception into the supposedly sanitized message.

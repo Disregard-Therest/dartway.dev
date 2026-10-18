@@ -11,7 +11,7 @@ Working with an AI assistant instead? It runs this same path for you — see
 ## 1. Install the CLI and check the machine
 
 ```bash
-dart pub global activate dartway_cli
+dart pub global activate --source git https://github.com/dartway/dartway --git-path packages/dartway_cli --git-ref stable
 dartway doctor
 ```
 
@@ -47,11 +47,6 @@ counters, analytics dashboards, a members table, a card per member, settings), t
 recorded by the [analytics module](../4-server/analytics.md), navigation with zone guards, a UI kit as
 source you own, and tests on both sides. No domain models. What each folder is for:
 [project layout](project-layout.md).
-
-Until the framework family is published on pub.dev, build the project against a local DartWay
-checkout: `dartway create my_app --framework-path <path to the checkout>`. Its pubspecs then get
-`dependency_overrides` onto the checkout's packages, and the template and the toolkit come from the
-same checkout.
 
 ## 3. Bring the server up
 
@@ -142,8 +137,9 @@ flutter run
 ```
 
 The app calls `http://localhost:8080`, or `http://10.0.2.2:8080` on the Android emulator, where
-`localhost` is the emulator itself. `lib/main.dart` picks between them; a deployed build is compiled
-against a fixed address with `--dart-define=DW_BACKEND_URL=…`.
+`localhost` is the emulator itself. `lib/main.dart` picks between them. A mobile or desktop
+deployment names its backend with `--dart-define=DW_BACKEND_URL=…`; a web release without
+that define calls `Uri.base.origin`.
 
 **In a browser the app calls its server on its own origin**, as a deployment serves it, so there is no
 CORS to configure — locally either. The development proxy puts Flutter's web server and the API
@@ -166,7 +162,7 @@ For a release build behind the same proxy:
 
 ```bash
 cd my_app_flutter
-flutter build web --dart-define=DW_BACKEND_URL=http://localhost:8000
+flutter build web
 dart run dartway_cli:dartway dev proxy --web-dir build/web
 ```
 

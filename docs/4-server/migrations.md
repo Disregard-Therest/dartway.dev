@@ -13,6 +13,32 @@ Migrations are code rather than a diff computed at deploy time because only a pe
 a dropped column was really renamed, or what a new `NOT NULL` column should hold in existing rows.
 The tools write the draft and refuse to guess those answers.
 
+## Expand, then contract across releases
+
+A **release** here is a deploy to production, including the next production deploy in a project
+without release branches. The previous release's code must run on the new schema: rolling back to
+its image and running old and new code side by side both depend on that.
+
+Expand in the release that changes the code: add tables, nullable columns or columns with a default,
+indexes, or relax constraints that released readers and writers can still use.
+Relaxing `NOT NULL` to nullable is an expansion only while new code, including backfills, writes
+no `NULL` that released code reads as non-null. Dropping a default that released inserts rely on
+is a contraction.
+
+Contract one release later, once no running code relies on the old shape: drop, rename, change a
+type, make existing rows `NOT NULL`, narrow a constraint, or remove a default that released inserts
+rely on. A rename of a released column or table takes four steps:
+
+1. Release N: add the new column or table.
+2. Release N: write both (or backfill).
+3. Release N: switch reads to the new one.
+4. Release N+1: drop the old one.
+
+A type change uses the same sequence through a new column. A direct `renameColumn` or
+`ALTER TABLE … RENAME TO` is only for a table or column **no released code reads**, typically one
+added in the same unreleased branch. A drop and an add in one table are usually a rename; that
+does not make a direct rename safe for released readers.
+
 ## `DwDatabaseMigration`
 
 A migration adding an `invoice` table, as `create` would draft it:
@@ -59,7 +85,9 @@ final class M20261001120000Invoices extends DwDatabaseMigration {
 ```
 
 Real ones: `example/dartway_example_server/lib/src/migrations/` (the chat migration there was
-reviewed by hand — a column renamed rather than dropped and re-added).
+reviewed by hand — a column renamed rather than dropped and re-added). A direct rename is only
+appropriate when no released code reads that column; for a released column, use the
+[two-release sequence](#expand-then-contract-across-releases).
 
 | Member | Meaning |
 |---|---|
@@ -81,10 +109,14 @@ months against the schema of its own day. It describes tables with schema litera
 `dropForeignKey`, `addUnique`, `dropUnique`, `createIndex`, `dropIndex`, and `sql` / `query` for
 everything else. A `backfill` is an SQL expression computed for each existing row: the column is
 added nullable, filled and then made `NOT NULL`, in the migration's transaction.
+Adding a `NOT NULL` column with only `backfill:` is an expansion only if the previous code does
+not insert into that table; otherwise the column needs a default so its inserts still work.
 
 `DwCalendarDay` maps to PostgreSQL `date`. Adopting it for a new field is optional and needs no
 framework migration. If a project chooses to convert an existing `timestamptz` field, the project
-owns that schema change and must name the civil zone in its `USING` expression, for example
+owns that schema change and follows the [two-release sequence](#expand-then-contract-across-releases)
+through a new column. It must name the civil zone in its backfill conversion (or `USING` expression
+for a direct type change when no released code uses the old shape), for example
 `(starts_at AT TIME ZONE 'America/Los_Angeles')::date`; the selected zone decides which day each
 instant becomes. The framework does not rewrite timestamp columns or require existing projects to
 adopt the date type.
@@ -98,12 +130,24 @@ so two processes starting at once apply each migration once; the second waits an
 Before applying anything, the runner compares the ledger with the code and **refuses** —
 `DwMigrationRefused`, nothing applied, every problem listed — when:
 
-- a migration is applied but no longer registered (**missing**);
+- a migration is applied but no longer registered and its id precedes a registered id in its
+  namespace (**missing**: a gap in the chain);
 - an applied migration's checksum differs from the code's and is not one of its
   `supersededChecksums` (**changed**: its source was edited);
 - a migration is **dirty** (a non-transactional one started and never finished);
 - a `dependsOn` names an unregistered migration, the dependencies form a cycle, or one id is
   registered twice.
+
+An unknown applied migration whose id sorts after every registered id in its namespace is
+**ahead**: applied by a newer release than this code. A registered namespace with no migrations
+treats every applied row as newer. This rule covers `dw`, modules and `app`; unregistered
+namespaces are ignored. A previous release boots on the newer schema, logging one warning per
+namespace, and the declared-table and column check still runs. `DwMigrationRun.ahead` reports
+these refs without including them in the migrations run; `status` lists them as `ahead` with no
+refusal. Gaps, edited checksums and dirty rows (including newer ones) still refuse. Any ahead row
+blocks rollback by batch or id: use the newer release's code to roll it back. Additive changes
+can support an image rollback; a removed or renamed table or column still needs a release that
+has stopped using it before the schema contracts.
 
 Otherwise the pending migrations run as one **batch**, ordered by `dependsOn` first, then by
 namespace — the framework's `dw`, then the modules' in the order they are given, then the
@@ -134,6 +178,9 @@ Future<void> up(DwMigrationContext m) async {
   await m.backfill("UPDATE project_issue SET stage = 'review' WHERE stage = 'validation'");
 }
 ```
+
+This addition with only `backfill:` assumes the previous code does not insert into `project_issue`;
+otherwise `stage` needs a default, as described [above](#expand-then-contract-across-releases).
 
 `backfill` runs like `sql`; what it adds is the statement's purpose, and `dart run dartway_cli:dartway check` holds it:
 an `INSERT`, `UPDATE` or `DELETE` anywhere else in a project migration fails the build
@@ -179,6 +226,10 @@ migration id, or names none in `lib/src/migrations/`, is a finding of its own.
   (`UPDATE dw_stored_file SET bucket = '…' WHERE visibility = '…'`).
 - `app` — the project's.
 
+Framework migrations ship inside a package version and follow the same
+[expand/contract rule](#expand-then-contract-across-releases): a rollback runs the previous
+framework version on the new `dw_*` schema.
+
 Project tables may reference framework tables — a profile references `dw_account`, an attachment
 `dw_stored_file` — but a project never writes migrations for, or queries, the `dw_*` tables
 ([auth and identity](auth-identity.md#no-sql-on-framework-tables)).
@@ -214,7 +265,7 @@ it compiles against the project's row classes and migrations.
 | `rollback` | rolls back the last batch | as `apply` |
 | `rollback --batch N` | rolls back batch N | |
 | `rollback --id X` | rolls back one migration; `X` is an id of the project or `namespace/id` | |
-| `status` | lists every migration: applied, pending, dirty, changed, missing | `2` when any is dirty, changed or missing |
+| `status` | lists every migration: applied, pending, ahead, dirty, changed, missing | `2` when any is dirty, changed or missing |
 | `create <name>` | writes a draft for the difference between the migrations and the row classes; `name` is snake_case | `0` |
 | `check` | verifies files, schema parity and up/down/up | `3` when it finds a difference |
 | `rehash [id …]` | re-seals the checksums of edited migrations (all, or the ids given) | `0` |
@@ -240,10 +291,17 @@ Run `dart run dartway_cli:dartway generate` first: `create` reads the generated 
 No schema difference writes an empty migration, for data work. A change the diff cannot decide is
 written as a call to `decisionRequired('…')`, with a comment naming the options:
 
-- dropping a table or a column (it may have been renamed — the options include `renameColumn`);
-- adding a `NOT NULL` column without a default (existing rows need a value: a `backfill`);
-- changing a column's type (values must convert: a `using` expression);
-- making a column `NOT NULL` (existing nulls need a `backfill`).
+- dropping a table or a column: only in a release after the code stopped reading the old shape;
+  in the same release, [expand instead](#expand-then-contract-across-releases). The options include
+  `renameColumn` only for a column no released code reads;
+- adding a `NOT NULL` column without a default: existing rows need a `backfill`, but if the previous
+  code inserts into that table the column needs a default;
+- changing a column's type: only in a release after the code stopped reading the old shape;
+  in the same release, [expand through a new column](#expand-then-contract-across-releases).
+  A direct conversion needs a `using` expression;
+- making a column `NOT NULL`: only in a release after the code stopped reading the old shape;
+  in the same release, [expand instead](#expand-then-contract-across-releases). Existing nulls need
+  a `backfill`.
 
 `decisionRequired` is a function that does not exist, so **the draft does not compile until every
 decision is made.** A runtime throw would surface only when the migration runs; a compile error
@@ -290,8 +348,9 @@ that the check did not run — never that the migrations are fine. See
 
 `DwAppServer.start()` runs the same runner over `{'dw': frameworkMigrations, 'app': migrations}`
 after opening the database. A refusal or a failure throws, and the process exits non-zero: a server
-never serves a schema that disagrees with its ledger. Then, when `schema` is given, it checks that
-every declared table and column exists ([app server](app-server.md#what-start-does-in-order)).
+never serves over a gap, edit or dirty migration. Ahead rows produce warnings and boot proceeds.
+Then, when `schema` is given, it checks that every declared table and column exists
+([app server](app-server.md#what-start-does-in-order)).
 
 So a deploy needs no separate migration step. `bin/migrate.dart` is for development (`create`,
 `check`, `rollback`) and for inspecting a database (`status`).

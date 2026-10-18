@@ -8,7 +8,7 @@ the generator, one checks the conventions, one serves the web app and the server
 runs the server tests on a database of their own, one deploys, and one counts lines.
 
 ```bash
-dart pub global activate dartway_cli
+dart pub global activate --source git https://github.com/dartway/dartway --git-path packages/dartway_cli --git-ref stable
 ```
 
 **Inside a project, run the CLI the project pins.** Every DartWay project carries `dartway_cli` as a
@@ -67,7 +67,7 @@ pub.dev — takes the channel. The install prints which source it used and recor
 |---|---|
 | `DARTWAY_BRANCH` | The channel for `create`, `setup-ai` and `update` when `--channel` is not given; chosen, so it wins over the checkout the CLI runs from |
 | `DARTWAY_MONOREPO_DIR` | A local monorepo checkout to use instead of cloning |
-| `DARTWAY_REPO_URL` | Another monorepo git URL (default `https://github.com/dartway/dartway.git`) |
+| `DARTWAY_REPO_URL` | Another monorepo git URL (default `https://github.com/dartway/dartway`) |
 
 ## `dartway quickstart` — the instruction, printed
 
@@ -76,7 +76,7 @@ of the bring-up steps and why, how to verify the server answers, how to hand ove
 the checks to run before calling a change done. It writes nothing and asks nothing.
 
 It is a printed text rather than an extension for one assistant on purpose: **whatever agent you
-use, its way in is two commands** — `dart pub global activate dartway_cli` and `dartway
+use, its way in is two commands** — `dart pub global activate --source git https://github.com/dartway/dartway --git-path packages/dartway_cli --git-ref stable` and `dartway
 quickstart` — after which the instruction is in that agent's context. A plugin for one vendor would
 make the front door of an open framework depend on a format nobody here controls. A human reads the
 same text; there is no second, friendlier version to drift from it. The source is
@@ -84,7 +84,7 @@ same text; there is no second, friendlier version to drift from it. The source i
 
 ## `dartway doctor` — is this machine ready?
 
-Six checks, each with the exact fix when it fails:
+Checks, each with the exact fix when it fails:
 
 | Check | Why it is here |
 |---|---|
@@ -92,7 +92,8 @@ Six checks, each with the exact fix when it fails:
 | Flutter `>=3.44.0` | |
 | git, with `user.name` and `user.email` | `create` commits the new project. A missing binary fails; a missing identity warns — the project is complete, but has no initial commit |
 | A pub host that answers | `pub get` sets no deadline on a connection that opens and goes quiet, so a filtered route surfaces as a resolve step that hangs without a word. The probe asks for bytes rather than a socket (a TCP connect succeeds even when the TLS handshake after it is filtered), waits 10 seconds, and honours `PUB_HOSTED_URL` |
-| A responding Docker daemon | Postgres and the storage come from it by default. Tests can instead use explicit `--database-url` / `--storage-url` servers. Not installed and not running are reported apart |
+| Test servers (`tests`, when a test URL variable is set) | Validates `DW_TEST_DATABASE_URL` / `DW_TEST_STORAGE_URL` and reports their hosts without credentials. Doctor requires loopback and has no remote-server override |
+| A responding Docker daemon | Postgres and the storage come from it by default. Doctor drops this check when nonempty `DW_TEST_DATABASE_URL` is set; `DW_TEST_STORAGE_URL` alone still needs Docker for Postgres. Flags passed only to the test command (`dart run dartway_cli:dartway test`) do not change doctor's checks. Not installed and not running are reported apart |
 | The pub global bin directory on `PATH` | The cause of `dartway: command not found` right after a successful install. A warning: `dart pub global run dartway_cli:dartway` works regardless |
 
 Exit code `1` when anything fails, `0` otherwise (warnings included), so an agent or a CI step can
@@ -123,9 +124,8 @@ What the copy does beyond copying:
 - runs `dart format` over `bin/`, `lib/` and `test/` of every package — a rename changes the length
   of names, and without this the first commit would not be formatted and `dart run dartway_cli:dartway generate
   --check` would depend on where lines happened to break;
-- strips the monorepo-only `dependency_overrides` block (with the comments above it) from every
-  package pubspec. Those overrides point at sibling folders of the monorepo; in a project they lead
-  nowhere, and what is left resolves from pub.dev;
+- replaces the monorepo-only `dependency_overrides` block with git overrides for exactly the
+  `dartway_*` packages each pubspec reaches, pinned to the full commit that supplied the template;
 - installs the toolkit with base branch `master` and the given `--language` and `--notes-tracker`
   (see `setup-ai` below);
 - unless `--no-git`: `git init` (skipped when the folder is already a repository), `git add -A`,
@@ -149,11 +149,7 @@ lands in that repository.
 | `--notes-tracker` | `dartway/dartway` | GitHub repository where findings about the framework are filed; `none` files nothing outside the project |
 | `--[no-]git` | on | Initialize a repository with an initial commit |
 
-**`--framework-path` is how a project is built against a framework checkout that is not published** —
-this tree's own unreleased changes, or a fork. The rewrite's package family (`^0.20.0`) is on
-pub.dev, so a project created normally resolves on its own; `--framework-path` instead resolves the
-same pubspecs against the local checkout the template was written against. The block it writes says
-to remove it once the versions it points at are published.
+**`--framework-path` is how a project is built against a local framework checkout** — this tree's own uncommitted changes, or a fork. Normally `create` writes immutable git overrides at the template commit; `dartway update --target <sha>` moves them. `--framework-path` writes path overrides instead.
 
 The last thing `create` prints points at `dartway doctor` and `dartway quickstart` and says to ask
 whatever assistant you use to bring the project up. The manual sequence is in the project's
@@ -244,9 +240,10 @@ and leaves project files untouched. Choose a resolvable hosted target or project
 configuration. `--framework-path` supplies a local plugin path when adding a missing plugin; it
 preserves an existing source choice. Pub cache activity occurs outside the project.
 
-After successful preflight, `update --target` installs the selected toolkit integrations and applies
-the planned lint configuration edit. It edits no application code, bumps no dependencies and completes
-no migration notes. The `dartway-update` skill guides the project edits, regeneration and verification.
+After successful preflight, `update --target` installs the selected toolkit integrations, moves every
+framework Git override and the lint plugin Git ref to the exact target, and applies the planned lint
+configuration edit. It edits no application code, bumps no hosted dependency and completes no migration
+notes. The `dartway-update` skill guides the project edits, regeneration and verification.
 
 Record each note only after checking its edits or applicability:
 
@@ -269,6 +266,7 @@ cd <project>_flutter
 dart run dartway_cli:dartway generate            # write
 dart run dartway_cli:dartway generate --check --contract-base <trusted-SHA>  # read-only freshness and compatibility
 dart run dartway_cli:dartway generate -v         # list every file written or removed
+dart run dartway_cli:dartway generate --release  # the release: raise the contract version once
 ```
 
 Runs `dartway_generator` over the project: DTO codecs (`*.dw.dart` parts) and the protocol registry
@@ -287,6 +285,32 @@ unresolved package has no package config to find the generator in.
 
 The exit code is the generator's. `--check` is what CI runs, and what `dart run dartway_cli:dartway check` reports as
 `generatedCodeStale` and `projectContractVersion`.
+
+**A project with a release branch raises the contract version at the release, not in each task**
+(D-158). Install the toolkit with `--release-branch <branch>` (recorded as `releaseBranch`): tasks merge
+into the base branch, and generation and `--check` without `--contract-base` take the merge-base
+with the release branch as the baseline, generate at the current `version:` and report the raise the
+contract changes need instead of failing. The release runs `generate --release`: it raises the shared
+package `version:` — the next major (the next minor below 1.0) for an incompatible change, the next
+minor (the next patch below 1.0) for a new data object — generates at it and runs `pub get` in every
+package. The release CI then checks with an explicit `--contract-base` against the release branch,
+strictly, as before.
+
+## `dartway sync` — the base branch in, nothing derived to resolve
+
+```bash
+dart run dartway_cli:dartway sync              # merge origin/<baseBranch>
+dart run dartway_cli:dartway sync develop      # or any ref
+dart run dartway_cli:dartway sync --continue   # after resolving a source conflict
+```
+
+Merges the base branch into the current one from a clean tree. A conflict in a derived file —
+`lib/generated/`, `*.dw.dart`, `pubspec.lock`, the `flutter gen-l10n` outputs of `l10n.yaml` — takes
+either side; the migrations registry (`migrations.dart` headed `Maintained by \`migrate create\``) is
+rewritten from the migration files beside it; an `.arb` merges by key, and only a key both sides
+changed differently stays a conflict. Then `pub get` (and `gen-l10n`) in every package and
+`dart run dartway_cli:dartway generate` remake every derived file from the merged sources, and the merge is committed.
+A conflict in a source stops it: resolve, `git add`, then `--continue`.
 
 ## `dartway check` — the conventions, enforced
 
@@ -322,12 +346,12 @@ dart run dartway_cli:dartway dev proxy --web http://localhost:5000    # `flutter
 dart run dartway_cli:dartway dev proxy --web-dir build/web            # a built app instead
 ```
 
-**The server answers no CORS, in development too** (D-039). A deployed web app reaches `/dw/*` and
-`/health` on its own origin, because the front proxy serves the app and proxies those paths beside
-it — see [Deploying the server](deploy.md). `flutter run -d chrome` breaks that on a laptop: the app
+**The server answers no CORS, in development too** (D-039). A deployed web app reaches `/dw/*`
+(including `/dw/health`) on its own origin, because the front proxy serves the app and proxies
+`/dw/` beside it — see [Deploying the server](deploy.md). `flutter run -d chrome` breaks that on a laptop: the app
 is served from a port of its own and every call is cross-origin. `dart run dartway_cli:dartway dev` restores the deployed
 shape: **one origin, `http://localhost:8000` by default**, where `/dw/*` (the `/dw/live` socket
-included) and `/health` go to the server and everything else to the web app.
+included) go to the server and everything else to the web app.
 
 Both subcommands take:
 
@@ -372,9 +396,13 @@ dart run dartway_cli:dartway test -- --name 'sign-in'    # everything after -- g
 dart run dartway_cli:dartway test --keep                 # leave the containers up to look inside them
 ```
 
-For environments without Docker, `--database-url` and `--storage-url` select explicit test servers.
-Hosts must resolve to loopback unless `--allow-remote-test-server` is supplied; inherited service
-variables never select servers. See [Servers supplied by a cloud environment](testing.md#servers-supplied-by-a-cloud-environment)
+For environments without Docker, `--database-url` and `--storage-url`, or their test-only defaults
+`DW_TEST_DATABASE_URL` and `DW_TEST_STORAGE_URL`, select explicit test servers. Flags win; empty
+variables count as unset. `--no-storage` ignores `DW_TEST_STORAGE_URL` but refuses an explicit
+`--storage-url`. Hosts must resolve to loopback unless `--allow-remote-test-server` is supplied;
+there is no environment form of that opt-in. Inherited application `DW_DATABASE_*` / `DW_STORAGE_*`
+variables never select servers. The suite and service workers receive only this run's service
+coordinates, with both test URL variables removed. See [Servers supplied by a cloud environment](testing.md#servers-supplied-by-a-cloud-environment)
 for setup and run-scoped cleanup.
 
 By default, starts a Postgres and a storage for this run on ports Docker picks, waits until both accept
@@ -388,8 +416,8 @@ a database and buckets of its own.
 | `--image` | `postgres:17-alpine` | Postgres image — the one a deployment runs |
 | `--[no-]storage` | on | Start the storage beside Postgres; `--no-storage` for a server without uploads |
 | `--storage-image` | `rustfs/rustfs:1.0.0` | Storage image — the one a deployment runs |
-| `--database-url` | unset | Explicit Postgres server and maintenance database, with a CREATEDB role; without a storage URL, storage is disabled |
-| `--storage-url` | unset | Explicit HTTP/HTTPS path-style S3 server and credentials |
+| `--database-url` | `DW_TEST_DATABASE_URL` (unset if empty) | Explicit Postgres server and maintenance database, with a CREATEDB role; without a storage URL, storage is disabled |
+| `--storage-url` | `DW_TEST_STORAGE_URL` (unset if empty) | Explicit HTTP/HTTPS path-style S3 server and credentials; ignored by `--no-storage` when supplied only by the variable |
 | `--allow-remote-test-server` | off | Permit explicit servers outside loopback, for a deliberate dedicated test server |
 
 Why a database per run rather than a compose service, and how a suite uses it, is
@@ -399,12 +427,20 @@ Why a database per run rather than a compose service, and how a suite uses it, i
 
 ```bash
 cd <project>_flutter
+dart run dartway_cli:dartway deploy kamal                 # generate Studio/Kamal files
+dart run dartway_cli:dartway deploy kamal --check         # reject stale generated files
 dart run dartway_cli:dartway deploy setup --env staging
 dart run dartway_cli:dartway deploy check --env staging
 dart run dartway_cli:dartway deploy run   --env staging
 dart run dartway_cli:dartway deploy run   --env staging --revision "$GITHUB_SHA"
 dartway secret set SMS_API_TOKEN --env staging
 ```
+
+`kamal` generates stage/prod Kamal configs, the Studio manifest and a CI image
+workflow from `deploy/config.yaml`, literal project routes and the resolved CLI
+lock. `kamal --check` rejects stale output without writing; web release builds
+call `Uri.base.origin`, so one image serves both destinations. See
+[Kamal and GHCR](deploy.md#kamal-and-ghcr).
 
 `setup` provisions a server and renders its Compose and Nginx configuration, `run` deploys, and
 `check` asserts that a deployment would work without changing anything. `run --revision <sha>`
