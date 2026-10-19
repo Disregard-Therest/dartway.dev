@@ -37,6 +37,10 @@ dart run dartway_cli:dartway deploy kamal --check
 ```
 
 Commit `deploy/kamal/`, `deploy/studio.yml` and `.github/workflows/images.yml`.
+The Studio manifest's `migrations` globs name the server package's
+`lib/src/migrations/**` and `pubspec.lock`, relative to the repository root.
+Studio treats changes matching either path as carrying migrations, including
+framework migrations brought in by dependency updates.
 Generated files carry their source instructions. `--check` writes nothing and
 names every stale file. Server route changes do not affect the generated web
 configuration. The API service is the root service on its own host only. On
@@ -64,8 +68,12 @@ a generated Studio manifest skip builds.
 
 It respects `DW_CI_RUNS_ON`, builds `linux/amd64`, uses a GHA layer cache and
 pushes `<commit sha>` tags to GHCR with `GITHUB_TOKEN` on those two branches.
-Existing manifests are skipped; registry failures fail the job. PR runs build
-without pushing. The OCI source label links the packages to their repository.
+Every service receives `BUILD_NUMBER=${{ github.run_number }}` as a Docker build
+argument. The web Dockerfile declares `ARG BUILD_NUMBER=0` after dependency
+resolution and passes it to `flutter build web --build-number=$BUILD_NUMBER`;
+Flutter writes it into `version.json`. Local builds default to zero.
+Existing manifests are skipped and keep their first build number; registry
+failures fail the job. PR runs build without pushing. The OCI source label links the packages to their repository.
 
 Bundled storage is a service built from `rustfs/rustfs:1.0.0` with a TLS host;
 external storage has no service and receives its environment through secrets.
@@ -631,7 +639,11 @@ journal, so a resume keeps the same targets. If a container image digest cannot 
 the tag is accepted only when Docker proves that image still holds the running container. After
 an interrupted deployment moved the tag, the next fresh deploy recovers by itself: it tries the
 `<project>-<service>:dw-previous` pin that deployment left, under the same proof. When neither
-holds the running container, it is refused before stopping the service. Images go before cache:
+holds the running container, it is refused before building either image. A retried build and each
+service replacement verify that the journalled rollback image still exists and restore a missing
+or moved `dw-previous` tag to that same image. A missing journalled image stops the deployment
+with a diagnostic before the build or replacement; a resume never records the newly serving image
+as its rollback target. Images go before cache:
 the containerd image store shares BuildKit snapshots with exported images. Every prune uses
 `--keep-storage` with `build_cache_keep`; shared cache keys for retained images survive so unchanged
 builds can reuse their layers. Docker excludes shared bytes from that budget, and so does the check
@@ -768,8 +780,9 @@ skips DNS, the server and the deployed hosts — the form that needs no SSH key 
   without the binding needs no such argument. A Kamal web image omits the define:
   the Studio binding takes its own `Uri.base.origin` in a web release.
 - **`.dockerignore` denies everything** and admits the packages by role suffix (`*_server/`,
-  `*_flutter/`, `*_shared/`), minus build output and `.env` — so the working copy's history, build
-  output and local secrets never reach the Docker daemon.
+  `*_flutter/`, `*_shared/`), minus build output, `.env` and native app signing material
+  (`key.properties`, `*.jks`, `*.keystore`, `*.p8`) at every depth. These excluded files
+  never reach the Docker daemon.
 
 **What the web image lets a browser keep fails silently.** A Flutter web build hashes nothing:
 `index.html`, `flutter_bootstrap.js`, `main.dart.js` and everything under `assets/` carry the same
