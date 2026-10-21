@@ -3,7 +3,7 @@
 ---
 title: Declare Studio migration paths and pass web build numbers
 affects:
-  dartway_cli: "0.25.0-dev.0"
+  dartway_cli: "0.25.0"
 ---
 
 ## Who is affected
