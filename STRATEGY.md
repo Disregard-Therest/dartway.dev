@@ -138,11 +138,10 @@ strings, the `hreflang` tags and the `/ru` URLs work without being hand-built. T
 places where the theme had to be overridden — the language switch and the alternate-language tags,
 both of which assume every page exists in every locale. Both are in `src/`, both are commented.
 
-**Docs sync from `master`, not `stable`.** `stable` is what `dartway create` actually hands users, so
-it is the more correct source in principle. But `stable` is not being promoted often enough right
-now, and stale-but-consistent is worse than fresh-but-slightly-ahead while the framework has
-essentially no users. The branch is one constant in the sync script. Switch to `stable` when
-promotion becomes regular.
+**Docs sync from `stable`.** `stable` is what `dartway create` actually hands users. Until
+22.10.2026 the sync tracked `master`, because `stable` was promoted irregularly; promotion is now
+weekly, every Thursday, so the docs follow the release within a day. The branch is one constant in
+the sync script.
 
 **Synced docs are committed to this repo,** not fetched at build time. The copy is diffable and
 reviewable before it goes live, the build is reproducible, and an upstream outage cannot break a

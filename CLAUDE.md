@@ -61,7 +61,7 @@ npm run build      # production build — must pass before anything is pushed
 npm run serve      # serve the built site
 npm run typecheck
 
-npm run sync-docs    # pull docs from the monorepo (default branch: master)
+npm run sync-docs    # pull docs from the monorepo (default branch: stable)
 npm run check-links  # verify every external link under learn/ resolves
 npm run stats        # read the page counter
 

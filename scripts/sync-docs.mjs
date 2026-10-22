@@ -22,12 +22,11 @@ const REPO = 'https://github.com/dartway/dartway.git';
 /**
  * Which branch the published docs describe.
  *
- * `stable` is what `dartway create` actually hands a user and is the correct
- * source in principle. We track `master` while `stable` is not promoted often
- * enough — fresh-but-slightly-ahead beats stale. Flip this line when promotion
- * becomes regular.
+ * `stable` is what `dartway create` actually hands a user, so the published
+ * docs describe it. Promotion is weekly, every Thursday (owner 22.10.2026); the
+ * daily sync picks the new `stable` up within a day.
  */
-const BRANCH = 'master';
+const BRANCH = 'stable';
 
 /** Path to the docs folder inside the monorepo. */
 const SOURCE_DIR = 'docs';
