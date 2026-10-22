@@ -276,7 +276,7 @@ function pageContent() {
         translate({
           id: 'landing.process.install.text',
           description: 'Getting-started step body',
-          message: 'dart pub global activate --source git https://github.com/dartway/dartway --git-path packages/dartway_cli --git-ref stable: the only thing to put on the machine by hand.',
+          message: 'dart pub global activate dartway_cli: the only thing to put on the machine by hand.',
         }),
       ],
       [
