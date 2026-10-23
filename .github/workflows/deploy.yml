@@ -1,4 +1,4 @@
-name: Deploy Docusaurus to GitHub Pages
+name: Deploy Docusaurus to Cloudflare Pages
 
 on:
   push:
@@ -18,11 +18,9 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: "deploy"
   cancel-in-progress: true
 
 jobs:
@@ -62,20 +60,9 @@ jobs:
         with:
           path: build   # Docusaurus outputs to ./build
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
-
-  # Cloudflare Pages takes over hosting (GitHub Pages stopped issuing HTTPS
-  # certificates for our domains, 18.10.2026). Runs beside GitHub Pages until
-  # DNS moves to Cloudflare; then the GitHub Pages jobs go.
+  # Hosting is Cloudflare Pages (GitHub Pages stopped issuing HTTPS certificates
+  # for our domains, 18.10.2026). The build artifact keeps the upload-pages-artifact
+  # format: one tar named github-pages.
   cloudflare:
     needs: build
     runs-on: ubuntu-latest

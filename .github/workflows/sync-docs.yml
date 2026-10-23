@@ -17,8 +17,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: sync-docs
@@ -88,5 +86,3 @@ jobs:
     secrets: inherit
     permissions:
       contents: read
-      pages: write
-      id-token: write
