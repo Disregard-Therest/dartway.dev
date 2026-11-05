@@ -71,7 +71,9 @@ pushes `<commit sha>` tags to GHCR with `GITHUB_TOKEN` on those two branches.
 Every service receives `BUILD_NUMBER=${{ github.run_number }}` as a Docker build
 argument. The web Dockerfile declares `ARG BUILD_NUMBER=0` after dependency
 resolution and passes it to `flutter build web --build-number=$BUILD_NUMBER`;
-Flutter writes it into `version.json`. Local builds default to zero.
+Flutter writes it into `version.json`. Compose deploys pass the checked-out
+commit's Unix timestamp, so the number is fixed per revision and an older
+`--revision` retains its commit ordering. Direct local builds default to zero.
 Existing manifests are skipped and keep their first build number; registry
 failures fail the job. PR runs build without pushing. The OCI source label links the packages to their repository.
 
@@ -160,7 +162,9 @@ stops the boot. Do not use `--skip_hooks` for deployments requiring files.
 Delivery to a new host remains a prerequisite: generating config does not
 upload files, and the generated Images workflow handles no secret contents.
 Studio's deploy runner must preserve the generated hooks and deliver files
-before invoking Kamal. No Studio file-upload interface is supplied by this CLI.
+before invoking Kamal. It activates the project's exact `dartway_cli` pin and
+sets `DW_PINNED_CLI` when running it, so a fresh deploy checkout does not need
+the app packages resolved. No Studio file-upload interface is supplied by this CLI.
 
 The Studio check image reads a checkout mounted read-only at `/project`, with
 `--project /project --env stage --version <full-commit-sha>` (or `prod`).
@@ -202,7 +206,8 @@ move. After the first framework image push, the owner must make the
 project rather than to one of its machines: `requires` (below); `local`, which is what a
 developer's own machine starts a server with and is not a deployment at all — see
 [Secrets](#secrets); and `migrations`, whose `dataChecksAfter` names the last migration
-`dartway check` leaves out of `migrationChangesData`
+`dartway check` leaves out of `migrationChangesData` and the offline NOT NULL deploy-safety scan of
+`migrationsDrift`
 ([Migrations](../4-server/migrations.md#a-migration-changes-the-schema)). **The server has no configuration file of its own** — it is configured by its
 environment, which the deploy derives from this file (database coordinates, storage, port) and from
 the secret store on the server (passwords, keys). Nothing writes `config.yaml`; the deploy only
@@ -221,6 +226,7 @@ reads it.
 | `app_domain` | yes | The Flutter web app |
 | `site` | no | `domain` and `source`: a directory of the repository served as static files, or `none` for a site that lives elsewhere |
 | `database` | no | `bundled` or `external`; absent means `bundled` — a Postgres container in the stack |
+| `backup` | no | Encrypted database backups: `bucket`, public age `recipient`, UTC `schedule` (`HH:MM`), and local `daily`/`weekly`/`pre_deploy` retention counts |
 | `storage` | no | `bundled` or `external`; absent means no file storage |
 | `storage_domain` | with `bundled` | The public host of the bundled storage; refused without `storage: bundled` |
 | `min_free_disk` | no | Minimum free space on Docker's data root before building; defaults to `10GB`. Positive sizes in `MB` or `GB` (1024-based), for example `512MB` or `10GB` |
@@ -257,6 +263,64 @@ this refusal on a host whose stock `admin` group exists — that guard is not wh
 does is the default: `dw_admin` is fixed rather than derived from the project, because no stock
 image or package ships a group under the `dw_` prefix, so an operator who does not set
 `deploy_user` never meets this collision at all.
+
+### Database backups
+
+Declare the policy in the deployment environment; keep only the public age
+recipient in Git. The matching private identity must never be stored on the
+production host.
+
+```yaml
+backup:
+  bucket: private-project-backups
+  endpoint: https://s3.twcstorage.ru
+  region: ru-1
+  recipient: age1example...
+  schedule: 03:00       # UTC
+  daily: 7
+  weekly: 4
+  pre_deploy: 5
+```
+
+Deliver `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` with `dartway secret
+set`, then rerun `dartway deploy setup`. Setup installs a persistent systemd
+timer. Each run makes a custom-format `pg_dump`, encrypts it with age, uploads
+it below `backups/daily/`, and prunes the host copies to the configured daily,
+weekly, and pre-deploy counts. The three local sets default to 7 daily dumps, 4
+weekly dumps, and 5 pre-deploy dumps. The bucket is private; encryption means
+the bucket operator still cannot read a dump. Configure the bucket's lifecycle
+rule to delete old off-host copies; for example, expire objects under `backups/`
+after 30 days.
+The backup script prunes host copies only and does not delete bucket objects.
+
+A configured production deploy runs the same operation below
+`backups/pre-deploy/<version>-<UTC timestamp>.dump.age` before the server starts
+and therefore before its migrations. A dump, encryption, or upload failure
+stops the deploy with the serving version untouched. `--skip-backup` is the
+explicit emergency exception; the deployment journal records a
+`backup-skipped` step and its output.
+
+Only a Sunday daily backup is copied into the local weekly set; pre-deploy
+backups are never weekly candidates.
+
+On a non-production verification stand, put the age identity file path in the
+stand's secret store as `BACKUP_AGE_IDENTITY`, then run:
+
+```bash
+dartway deploy backup verify --env backup-verify
+```
+
+The command downloads the latest off-host object, restores it into a uniquely
+named temporary database, prints its object timestamp and every project-table
+row count, and drops the database even when restore or reporting fails.
+Run it weekly. The documented freshness read for an external probe is:
+
+```bash
+ssh <host> 'cat /home/<deploy_user>/.config/<project>/backups/last-off-host-success'
+```
+
+That RFC 3339 UTC value is written only after a successful upload; alert when
+it is older than 26 hours.
 
 ### Moving the repository
 
@@ -324,7 +388,7 @@ The rendered Nginx:
 |---|---|
 | `postgres` | With `database: bundled`: `postgres:17-alpine`, on the volume `postgres_data`, with a `pg_isready` healthcheck, started with `pg_stat_statements` preloaded. Absent with `database: external` — no service, no volume, no `depends_on` on it |
 | `server` | Built from `<project>_server/Dockerfile` with the project root as context. Secrets through `env_file: .env`; `PORT=8080` always, and with `database: bundled` (and, with the bundled storage, `DW_STORAGE_*`) `DW_DATABASE_*` in the compose file too — with `database: external` none of `DW_DATABASE_*` is rendered at all, all five (`HOST`, `PORT`, `NAME`, `USER`, `PASSWORD`) come from `.env` like any other secret. Exposed to the network only. `stop_grace_period: 45s`; healthcheck `GET /health` with a 600-second start period, because migrations run before the port opens |
-| `web` | Built from `<project>_flutter/Dockerfile`; `deploy run` passes `DW_BACKEND_URL` from `app_domain` as a build argument. The template's web release calls `Uri.base.origin` |
+| `web` | Built from `<project>_flutter/Dockerfile`; `deploy run` passes `DW_BACKEND_URL` from `app_domain` and the checked-out commit's Unix timestamp as `BUILD_NUMBER` (fixed per revision) as build arguments. The template's web release calls `Uri.base.origin` |
 | `storage`, `storage-init` | With `storage: bundled`: RustFS, and a one-shot job (a generic S3 client) that creates and configures both buckets on every deploy |
 | `nginx` | `nginx:1.30.5-alpine` (pinned, raised with the framework) on 80 and 443. Every host logs each request as one JSON line ([Speed](#speed--what-a-deployment-records)), into bounded files: ten of 50 MB |
 | `certbot` | Renews the certificate every 12 hours |

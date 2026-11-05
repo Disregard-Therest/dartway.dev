@@ -109,8 +109,10 @@ one folder. `--type <check>` runs one check by name; `--level info|warning|error
 one severity. `--fix` first applies the mechanical fixes, then checks: every relative import in `lib/`
 of the three packages becomes its `package:` form and the import block is sorted (generated files are
 left to their generator), and an acceptance test lying at the root of `test/` moves to the mirror of
-the `lib/src/<feature>/` it is named after, its import of the harness rewritten. `--type` and `--dir`
-narrow the fixes as they narrow the checks; `--dir` leaves the tests.
+the `lib/src/<feature>/` it is named after, its import of the harness rewritten. With design config,
+it also creates the relative resource symlink and wires the template web Docker context
+(`designResourcesInvalid`). `--type` and `--dir` narrow the fixes as they narrow the checks;
+`--dir` leaves the tests and design wiring.
 
 **Exit codes.** `1` when any error-severity finding is reported (a Flutter package with no `lib/`
 counts as one), `0` otherwise — warnings and infos print and pass. An unknown `--type` is a usage
@@ -135,7 +137,7 @@ error set. See [The agent toolkit](agent-toolkit.md).
 
 ## The checks
 
-Forty-five errors, fourteen warnings, one info — `DwCheckType` and its `severity` in
+Forty-seven errors, fourteen warnings, one info — `DwCheckType` and its `severity` in
 `packages/dartway_cli/lib/src/checker/dw_check_type.dart`.
 
 | Check | Level | What it means |
@@ -148,7 +150,9 @@ Forty-five errors, fourteen warnings, one info — `DwCheckType` and its `severi
 | `invalidFeatureStructure` | error | A feature folder with more than one root file |
 | `forbiddenFeatureImport` | error | Reaching into another feature's `widgets/` or `logic/` |
 | `notAFeature` | error | A folder in a zone whose entry point declares no widget |
-| `assetPathMissing` | error | An `assets/...` string that names no file |
+| `assetPathMissing` | error | An app or configured design asset string that names no file |
+| `designResourcesInvalid` | error | Invalid `.dartway/design.json`, design symlink, pubspec registration or Docker context |
+| `designResourceCopied` | error | An app `assets/` file hashes identically to a Studio resource; names the design key |
 | `barrelFile` | error | A file that only re-exports |
 | `widgetSizesItself` | error | `Expanded` or `SizedBox.expand` returned straight from `build` |
 | `invalidTopLevelLayout` | error | A folder or file the declared top level does not name, a fixed name that is missing, or a top-level name nested inside a zone; in the server's `lib/src/`, a file, a layer-named folder (the list is in [project layout](../1-getting-started/project-layout.md)) or a feature folder without its `<feature>_feature.dart` |
@@ -164,9 +168,9 @@ Forty-five errors, fourteen warnings, one info — `DwCheckType` and its `severi
 | `routeNameDuplicated` | error | Two navigation zones declare a route of the same name — names are global in `DwAppRouter`, which otherwise refuses to build on the first frame |
 | `contractNameInvalid` | error | A DTO in the shared package named against the naming law: one word (`Dw` is not a word), a read not named `Get…`/`List…`, a command named like a read. Judged by the framework base a class extends directly |
 | `forbiddenDateTimeNow` | error | `DateTime.now` or `DateTime.timestamp` (called or torn off, interpolations included), or `package:clock`'s `clock.now()` where it is imported (prefixed or not), anywhere in the server's `lib/` — the factory file included — the time there is `ctx.now`, the server's clock, which tests set and the job queue runs by. Comments and strings are passed over; `bin/` and `test/` are not judged |
-| `migrationsDrift` | error | Required additions to existing tables without a default (checked offline), or migrations that do not produce the declared schema, edited after sealing, unregistered, or with a down that does not undo its up |
+| `migrationsDrift` | error | Required additions to existing tables without a default (checked offline after the `dataChecksAfter` boundary), or migrations that do not produce the declared schema, edited after sealing, unregistered, or with a down that does not undo its up |
 | `redundantBangAllowed` | error | The server or the shared package's `analysis_options.yaml` (or a local file it includes) does not set `analyzer: errors: unnecessary_non_null_assertion: error` — a stored row's id is `int`, and `row.id!` hides the `!` that guards a real null (D-113) |
-| `migrationChangesData` | error | An `INSERT`, `UPDATE` or `DELETE` in a migration (`lib/src/migrations/m*.dart`) that is not an argument of `m.backfill(…)` — content is a seed step. Reads the SQL strings: adjacent literals as one string, `--` comments dropped, an interpolated table name still a table; only the dollar-quoted body of a function or procedure being defined passes. Migrations up to `deploy/config.yaml` > `migrations` > `dataChecksAfter` are not judged — and moving that key forward exempts whatever it passes, which no check can see: the agent's skills make a diff that moves it a stop for the human. A write into a `dw_*` table is refused even through `backfill`; `m.carrySettings` is the one way ([Migrations](../4-server/migrations.md#a-migration-changes-the-schema)) |
+| `migrationChangesData` | error | An `INSERT`, `UPDATE` or `DELETE` in a migration (`lib/src/migrations/m*.dart`) that is not an argument of `m.backfill(…)` — content is a seed step. Reads the SQL strings: adjacent literals as one string, `--` comments dropped, an interpolated table name still a table; only the dollar-quoted body of a function or procedure being defined passes. Migrations up to `deploy/config.yaml` > `migrations` > `dataChecksAfter` are not judged by this rule or the offline NOT NULL scan of `migrationsDrift` — and moving that key forward exempts whatever it passes, which no check can see: the agent's skills make a diff that moves it a stop for the human. A write into a `dw_*` table is refused even through `backfill`; `m.carrySettings` is the one way ([Migrations](../4-server/migrations.md#a-migration-changes-the-schema)) |
 | `workAfterServerStart` | error | `bin/server.dart` awaiting anything, or reaching `.db`, `.accounts` or `runInContext`, after the server's `start()` — the variable a `DwAppServer(…)` or `…Server.build(…)` was assigned to — in the same function; awaiting `stop()`/`close()` or a `ProcessSignal` passes ([Startup steps and seeds](../4-server/app-server.md#startup-steps-and-seeds)) |
 | `settingsKeyValueTable` | error | A row class whose own body has a unique `String key` beside a `String value`: settings are a data object read through `ctx.settings` ([Settings](../4-server/database.md#settings)) |
 | `fieldPatchMatched` | error | `DwSetField`, `DwClearField` or `DwKeepField` named in the code of the server, shared or Flutter package (`lib/`, `bin/`, `test/`; generated files exempt) — read a patch through its helpers ([Clearing a field](../2-core/data-objects-and-generation.md#clearing-a-field-dwfieldpatch)) |
@@ -178,7 +182,7 @@ Forty-five errors, fourteen warnings, one info — `DwCheckType` and its `severi
 | `forbiddenNavigationCall` | error | `showDialog`, `showModalBottomSheet`, `showCupertino…` and their siblings, `Navigator.push…` or a page route (`MaterialPageRoute`, …) outside `ui_kit/` and `core/router/`; `Navigator.pop`, `GoRouter.of(…).pop` or `context.pop` anywhere |
 | `sentinelId` | error | A route parameter set to `0` or `-1` — `…Params.<name>.set(0)` |
 | `relativeImport` | error | A relative `import`/`export` in `lib/` of the Flutter, server or shared package — `lib/` imports by `package:` only. Generated files are passed over; `--fix` rewrites the rest |
-| `testLayout` | error | A test that mirrors no `lib/` path (`test/<path>_test.dart` for `lib/<path>.dart`, `test/<path>/<folder>/<folder>[_<scenario>]_acceptance_test.dart` for `lib/<path>/<folder>/`), a helper outside `test/support/`, or a test inside it; `--fix` moves a root-level acceptance test to `test/src/<feature>/` |
+| `testLayout` | error | A test that mirrors no `lib/` path (`test/<path>_test.dart` for `lib/<path>.dart`, `test/<path>/<folder>/<folder>[_<scenario>]_{acceptance,contract}_test.dart` for `lib/<path>/<folder>/`), a helper outside `test/support/`, or a test inside it; `--fix` moves a root-level acceptance test to `test/src/<feature>/` |
 | `testHarnessBypassed` | error | Outside `test/support/`: a `ProviderScope` or a `DwFakeServer` built by a widget test, a `DwTestServer.start` or a `DwAppServer` by a server test |
 | `rawSpacing` | error | Outside `ui_kit/`: a number instead of an `AppSpace` step in a spacer `SizedBox`, a `Gap`, an `EdgeInsets.*`, or a `spacing:`/`runSpacing:`/`mainAxisSpacing:`/`crossAxisSpacing:` — conditionals included. Zero passes; a `SizedBox` with a `child:` or both dimensions, and `SizedBox.square`, are sizes, not spacing |
 | `lintsPluginMissing` | error | The Flutter package's `analysis_options.yaml` does not enable the `dartway_lints` plugin; `dartway update --target <sha>` adds it after resolution preflight; plan first with `--plan` |
@@ -187,7 +191,7 @@ Forty-five errors, fourteen warnings, one info — `DwCheckType` and its `severi
 | `uiKitConstStyle` | warning | A `static const` colour or text style in the kit outside `ui_kit/theme/` — a token that will not follow a second theme |
 | `fileTooLong` | warning | Over 350 lines, in the Flutter package's zones and layers but `ui_kit/`, and in the server's and the shared package's `lib/` — generated code, migrations and seed data passed over |
 | `featureSpecMissing` | warning | A feature widget that declares no `DwFeatureSpec` |
-| `forbiddenAssetPath` | warning | A raw `assets/...` path outside `ui_kit/` |
+| `forbiddenAssetPath` | warning | A raw app or configured design asset path outside `ui_kit/` |
 | `unusedFeatureFile` | warning | A file in `widgets/`/`logic/` that its own feature never mentions |
 | `frameworkRefsDiverged` | warning | The project's `dartway_*` git dependencies are locked to more than one commit |
 | `frameworkOverrideOutlived` | warning | A `dependency_overrides` version pin on a `dartway_*` package that a resolved framework package already allows — the override outlived the framework's own raise (D-032) |
@@ -328,7 +332,9 @@ prints is `dartway generate`, and generated files are never edited by hand. See
 **`migrationsDrift`** first checks migration sources offline: `ADD COLUMN … NOT NULL` on an
 existing table needs `DEFAULT`, or a nullable column with backfill and `NOT NULL` in a later release,
 so the previous server can still insert during deployment. General expand/contract compatibility
-remains a review obligation. It also runs the project's `bin/migrate.dart check`, which replays the migrations on
+remains a review obligation. Migrations at or before `migrations > dataChecksAfter` are excluded
+from this offline scan as well as from `migrationChangesData`; a malformed boundary or one naming
+no migration is a finding. It also runs the project's `bin/migrate.dart check`, which replays the migrations on
 throwaway databases next to the one `DW_DATABASE_*` — or `deploy/config.yaml > local`, which the
 check reads the same way the entry points do — names — so it needs a Postgres where databases can
 be created; the development one will do. It fails on migrations that do not produce the schema the
@@ -430,7 +436,12 @@ state holder reached through a subclass of the project's own, nor a `Notifier` n
 `dw.files.getLink` from a widget — nor refusal text built outside the catalogue. A `<Feature>Commands`
 class holds command senders only — a pure helper on it reads as a command sent outside `dw.action`.
 Only the first argument of `dw.action(…)` counts as inside it: a command in
-`followUpIfMountedAction` runs after the action's refusal handling is over.
+`followUpIfMountedAction` runs after the action's refusal handling is over. A local final closure
+used only in that first argument is also recognized; any use outside action work keeps the finding.
+The scan cannot trace a callback through another widget's file: pass a built `DwUiAction` at that
+boundary. Shared command-owning UI goes in `common/<feature>/` with its sender in `logic/`; pure
+helpers stay in `shared/`, and non-visual framework helpers may live in `core/` (for example
+`core/storage/` for file links).
 
 ## Why `notAFeature` and `featureSpecMissing` are one rule
 
@@ -546,9 +557,17 @@ same hole, smaller.
 
 DartWay projects run no asset code generator, so asset paths are written by hand — and a hand-written
 path, unlike a generated constant, can name a file that does not exist. `assetPathMissing` restores
-that guarantee, and `forbiddenAssetPath` keeps the paths in one place: a path spelled out in a screen
+that guarantee for app and configured design resources, and `forbiddenAssetPath` keeps the paths in
+one place: a path spelled out in a screen
 survives a renamed file only by accident and cannot be found by search. The screen should receive a
 widget, not a file name.
+
+Studio resources opt in through project-root `.dartway/design.json`:
+`{"path":"dw_studio"}` (`{}` uses that default). `dartway check --fix` creates
+the relative design symlink and adds the resources to template web Docker contexts.
+Both sources use `lib/ui_kit/assets/app_icon.dart`; list the linked resources folder
+in `flutter.assets`. Identical app-owned copies fail `designResourceCopied`.
+Without the config, the design rules are disabled. See [the UI kit](../3-flutter/ui-kit.md#studio-resources-and-app-assets).
 
 ## One way to write the ordinary things
 
@@ -570,7 +589,11 @@ for each.
   `test/src/chat/chat_attachments_acceptance_test.dart`, the `<feature>_*` naming a feature's own
   files follow. A scenario across features names the feature that owns it. The acceptance form names
   the folder rather than its `_feature.dart`, because it drives the feature's handlers, rows and
-  publications together, which is a test of the folder, not of the file that registers it. Helpers are in
+  publications together, which is a test of the folder, not of the file that registers it. A shared
+  feature's contract across several files has the same ownership rule:
+  `test/src/chat/chat_contract_test.dart` or `chat_updates_contract_test.dart` for `lib/src/chat/`.
+  Script tests live in `tool/test/` outside this scan and need an explicit `dart test tool/test`
+  command in CI; the default runner does not discover them. Helpers are in
   `test/support/`, and the harness there is how a test starts what it needs
   (`testHarnessBypassed`).
 - **Spacing is a token** (`rawSpacing`): the kit's `AppSpace` scale, a closed set named by value, so
